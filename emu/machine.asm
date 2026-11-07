@@ -275,6 +275,7 @@ dos_end:
 init2:
 	if TEST = 0
 	call v_init
+	call psg_init
 	call dirty_all
 	ld a,$FF
 	ld (rd_lastbg),a
@@ -663,6 +664,21 @@ io_wr:
 	ld l,a
 	ld h,$D0
 iw_notvic:
+	ld a,h
+	cp $D4
+	jr c,iw_notsid
+	cp $D8
+	jr nc,iw_notsid
+	ld a,l			; SID: mirror every 32 bytes, gate transitions
+	and $1F
+	ld l,a
+	ld h,$D4
+	push hl
+	call io_map
+	ld b,(hl)		; old value
+	pop hl
+	call sid_gate
+iw_notsid:
 	push hl
 	ld a,h
 	cp $D8
@@ -974,6 +990,7 @@ sched_line:
 	ld a,l
 	and RENDER_EVERY-1
 	call z,render
+	call sound_update
 	if THROTTLE
 	call frame_sync
 	endif
@@ -1138,4 +1155,5 @@ emu_bad:			; illegal opcode: stop (PC in DE)
 
 	include "video.asm"
 	include "kernal.asm"
+	include "sound.asm"
 	include "core.asm"

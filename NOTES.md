@@ -74,3 +74,8 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - Not yet seen: a real level change triggered by the game itself (needs playing to the end of level 1).
 - Checked "ninja missing after screen change": not a renderer bug. Walking right leads into a fight; the enemy drains POWER, the game then shows the ninja's start screen with the sprites briefly not visible, and ~10 s later ninja and enemy are drawn again (screenshots /tmp/ln/w_*.png, d5.png in that session). POWER spiral and ENEMY bar update correctly.
 - openMSX VRAM debuggable is "Sunrise GFX9000 VRAM"; its addresses are not the linear B-mode layout (reads at y*512+x gave 0 over visible grass), so check VRAM through screenshots.
+
+## Sound (emu/sound.asm)
+- SID -> PSG adapted from buggyboymsx (`sound_frame`, `sid_period`, `sid_envelope`): 3 voices square or noise, software ADSR per frame, master volume $D418; no filter, no ring/sync, pulse width ignored.
+- io_wr mirrors SID every 32 bytes and calls `sid_gate` on control writes (old vs new gate bit) so attack/release start at write time; `sound_update` runs at every emulated frame end.
+- Check: 10 s recording in game (`record start -audioonly`) has continuous signal; voice 0 SID freq $433A (~1011 Hz) -> PSG period $06E (~1017 Hz).

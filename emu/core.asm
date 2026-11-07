@@ -62,9 +62,6 @@ g2:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -86,9 +83,6 @@ h_05:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -113,10 +107,17 @@ h_06:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g3
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g4
+g3:
+	call port_wr
+	ld (hl),a
+g4:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -133,9 +134,6 @@ h_08:
 	ld (hl),a
 	dec l
 	ld (RV_S),hl
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -154,9 +152,6 @@ h_09:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -176,9 +171,6 @@ h_0A:
 	ld (RV_N),a
 	ld (RV_Z),a
 	ld (RV_A),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -197,21 +189,18 @@ h_0D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g3
+	jr nc,g5
 	ld a,(hl)
-	jr g4
-g3:
+	jr g6
+g5:
 	call rd_hi
-g4:
+g6:
 	ld l,a
 	ld a,(RV_A)
 	or l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -230,7 +219,7 @@ h_0E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g5
+	jr nc,g7
 	ld a,(hl)
 	push hl
 	add a,a
@@ -242,8 +231,8 @@ h_0E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g6
-g5:
+	jr g8
+g7:
 	call rd_hi
 	push hl
 	add a,a
@@ -255,10 +244,7 @@ g5:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g6:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g8:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -271,7 +257,7 @@ g6:
 h_10:
 	ld a,(RV_N)
 	rla
-	jr c,g9
+	jr c,g11
 	ld a,(de)
 	inc de
 	ld l,a
@@ -292,11 +278,8 @@ h_10:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g9:
+g11:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -320,21 +303,18 @@ h_11:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g10
+	jr nc,g12
 	ld a,(hl)
-	jr g11
-g10:
+	jr g13
+g12:
 	call rd_hi
-g11:
+g13:
 	ld l,a
 	ld a,(RV_A)
 	or l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -357,9 +337,6 @@ h_15:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -385,10 +362,17 @@ h_16:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g14
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g15
+g14:
+	call port_wr
+	ld (hl),a
+g15:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -401,9 +385,6 @@ h_16:
 h_18:
 	xor a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -424,21 +405,18 @@ h_19:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g12
+	jr nc,g16
 	ld a,(hl)
-	jr g13
-g12:
+	jr g17
+g16:
 	call rd_hi
-g13:
+g17:
 	ld l,a
 	ld a,(RV_A)
 	or l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -459,21 +437,18 @@ h_1D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g14
+	jr nc,g18
 	ld a,(hl)
-	jr g15
-g14:
+	jr g19
+g18:
 	call rd_hi
-g15:
+g19:
 	ld l,a
 	ld a,(RV_A)
 	or l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -494,7 +469,7 @@ h_1E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g16
+	jr nc,g20
 	ld a,(hl)
 	push hl
 	add a,a
@@ -506,8 +481,8 @@ h_1E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g17
-g16:
+	jr g21
+g20:
 	call rd_hi
 	push hl
 	add a,a
@@ -519,10 +494,7 @@ g16:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g17:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g21:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -573,21 +545,18 @@ h_21:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g20
+	jr nc,g24
 	ld a,(hl)
-	jr g21
-g20:
+	jr g25
+g24:
 	call rd_hi
-g21:
+g25:
 	ld l,a
 	ld a,(RV_A)
 	and l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -610,9 +579,6 @@ h_24:
 	ld a,(RV_A)
 	and l
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -634,9 +600,6 @@ h_25:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -665,10 +628,17 @@ h_26:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g26
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g27
+g26:
+	call port_wr
+	ld (hl),a
+g27:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -684,9 +654,6 @@ h_28:
 	ld (RV_S),hl
 	ld a,(hl)
 	call unpack_p
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -705,9 +672,6 @@ h_29:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -731,9 +695,6 @@ h_2A:
 	ld (RV_N),a
 	ld (RV_Z),a
 	ld (RV_A),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -752,12 +713,12 @@ h_2C:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g22
+	jr nc,g28
 	ld a,(hl)
-	jr g23
-g22:
+	jr g29
+g28:
 	call rd_hi
-g23:
+g29:
 	ld (RV_N),a
 	ld l,a
 	and $40
@@ -765,9 +726,6 @@ g23:
 	ld a,(RV_A)
 	and l
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -786,21 +744,18 @@ h_2D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g24
+	jr nc,g30
 	ld a,(hl)
-	jr g25
-g24:
+	jr g31
+g30:
 	call rd_hi
-g25:
+g31:
 	ld l,a
 	ld a,(RV_A)
 	and l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -819,7 +774,7 @@ h_2E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g26
+	jr nc,g32
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -835,8 +790,8 @@ h_2E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g27
-g26:
+	jr g33
+g32:
 	call rd_hi
 	push hl
 	ld l,a
@@ -852,10 +807,7 @@ g26:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g27:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g33:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -868,7 +820,7 @@ g27:
 h_30:
 	ld a,(RV_N)
 	rla
-	jr nc,g30
+	jr nc,g36
 	ld a,(de)
 	inc de
 	ld l,a
@@ -889,11 +841,8 @@ h_30:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g30:
+g36:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -917,21 +866,18 @@ h_31:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g31
+	jr nc,g37
 	ld a,(hl)
-	jr g32
-g31:
+	jr g38
+g37:
 	call rd_hi
-g32:
+g38:
 	ld l,a
 	ld a,(RV_A)
 	and l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -954,9 +900,6 @@ h_35:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -986,10 +929,17 @@ h_36:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g39
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g40
+g39:
+	call port_wr
+	ld (hl),a
+g40:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1002,9 +952,6 @@ h_36:
 h_38:
 	ld a,$FF
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1025,21 +972,18 @@ h_39:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g33
+	jr nc,g41
 	ld a,(hl)
-	jr g34
-g33:
+	jr g42
+g41:
 	call rd_hi
-g34:
+g42:
 	ld l,a
 	ld a,(RV_A)
 	and l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1060,21 +1004,18 @@ h_3D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g35
+	jr nc,g43
 	ld a,(hl)
-	jr g36
-g35:
+	jr g44
+g43:
 	call rd_hi
-g36:
+g44:
 	ld l,a
 	ld a,(RV_A)
 	and l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1095,7 +1036,7 @@ h_3E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g37
+	jr nc,g45
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -1111,8 +1052,8 @@ h_3E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g38
-g37:
+	jr g46
+g45:
 	call rd_hi
 	push hl
 	ld l,a
@@ -1128,10 +1069,7 @@ g37:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g38:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g46:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1181,21 +1119,18 @@ h_41:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g41
+	jr nc,g49
 	ld a,(hl)
-	jr g42
-g41:
+	jr g50
+g49:
 	call rd_hi
-g42:
+g50:
 	ld l,a
 	ld a,(RV_A)
 	xor l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1217,9 +1152,6 @@ h_45:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1244,10 +1176,17 @@ h_46:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g51
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g52
+g51:
+	call port_wr
+	ld (hl),a
+g52:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1263,9 +1202,6 @@ h_48:
 	ld (hl),a
 	dec l
 	ld (RV_S),hl
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1284,9 +1220,6 @@ h_49:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1306,9 +1239,6 @@ h_4A:
 	ld (RV_N),a
 	ld (RV_Z),a
 	ld (RV_A),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1346,21 +1276,18 @@ h_4D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g43
+	jr nc,g53
 	ld a,(hl)
-	jr g44
-g43:
+	jr g54
+g53:
 	call rd_hi
-g44:
+g54:
 	ld l,a
 	ld a,(RV_A)
 	xor l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1379,7 +1306,7 @@ h_4E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g45
+	jr nc,g55
 	ld a,(hl)
 	push hl
 	srl a
@@ -1391,8 +1318,8 @@ h_4E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g46
-g45:
+	jr g56
+g55:
 	call rd_hi
 	push hl
 	srl a
@@ -1404,10 +1331,7 @@ g45:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g46:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g56:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1420,7 +1344,7 @@ g46:
 h_50:
 	ld a,(RV_V)
 	or a
-	jr nz,g49
+	jr nz,g59
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1441,11 +1365,8 @@ h_50:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g49:
+g59:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1469,21 +1390,18 @@ h_51:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g50
+	jr nc,g60
 	ld a,(hl)
-	jr g51
-g50:
+	jr g61
+g60:
 	call rd_hi
-g51:
+g61:
 	ld l,a
 	ld a,(RV_A)
 	xor l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1506,9 +1424,6 @@ h_55:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1534,10 +1449,17 @@ h_56:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g62
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g63
+g62:
+	call port_wr
+	ld (hl),a
+g63:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1550,9 +1472,6 @@ h_56:
 h_58:
 	ld hl,RV_P
 	res 2,(hl)
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1573,21 +1492,18 @@ h_59:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g52
+	jr nc,g64
 	ld a,(hl)
-	jr g53
-g52:
+	jr g65
+g64:
 	call rd_hi
-g53:
+g65:
 	ld l,a
 	ld a,(RV_A)
 	xor l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1608,21 +1524,18 @@ h_5D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g54
+	jr nc,g66
 	ld a,(hl)
-	jr g55
-g54:
+	jr g67
+g66:
 	call rd_hi
-g55:
+g67:
 	ld l,a
 	ld a,(RV_A)
 	xor l
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1643,7 +1556,7 @@ h_5E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g56
+	jr nc,g68
 	ld a,(hl)
 	push hl
 	srl a
@@ -1655,8 +1568,8 @@ h_5E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g57
-g56:
+	jr g69
+g68:
 	call rd_hi
 	push hl
 	srl a
@@ -1668,10 +1581,7 @@ g56:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g57:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g69:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1717,12 +1627,12 @@ h_61:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g60
+	jr nc,g72
 	ld a,(hl)
-	jr g61
-g60:
+	jr g73
+g72:
 	call rd_hi
-g61:
+g73:
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -1740,9 +1650,6 @@ g61:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1775,9 +1682,6 @@ h_65:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1806,10 +1710,17 @@ h_66:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g74
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g75
+g74:
+	call port_wr
+	ld (hl),a
+g75:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1827,9 +1738,6 @@ h_68:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1859,9 +1767,6 @@ h_69:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1885,9 +1790,6 @@ h_6A:
 	ld (RV_N),a
 	ld (RV_Z),a
 	ld (RV_A),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1932,12 +1834,12 @@ h_6D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g62
+	jr nc,g76
 	ld a,(hl)
-	jr g63
-g62:
+	jr g77
+g76:
 	call rd_hi
-g63:
+g77:
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -1955,9 +1857,6 @@ g63:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1976,7 +1875,7 @@ h_6E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g64
+	jr nc,g78
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -1992,8 +1891,8 @@ h_6E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g65
-g64:
+	jr g79
+g78:
 	call rd_hi
 	push hl
 	ld l,a
@@ -2009,10 +1908,7 @@ g64:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g65:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g79:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2025,7 +1921,7 @@ g65:
 h_70:
 	ld a,(RV_V)
 	or a
-	jr z,g68
+	jr z,g82
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2046,11 +1942,8 @@ h_70:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g68:
+g82:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2074,12 +1967,12 @@ h_71:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g69
+	jr nc,g83
 	ld a,(hl)
-	jr g70
-g69:
+	jr g84
+g83:
 	call rd_hi
-g70:
+g84:
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -2097,9 +1990,6 @@ g70:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2133,9 +2023,6 @@ h_75:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2165,10 +2052,17 @@ h_76:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g85
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g86
+g85:
+	call port_wr
+	ld (hl),a
+g86:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2181,9 +2075,6 @@ h_76:
 h_78:
 	ld hl,RV_P
 	set 2,(hl)
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2204,12 +2095,12 @@ h_79:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g71
+	jr nc,g87
 	ld a,(hl)
-	jr g72
-g71:
+	jr g88
+g87:
 	call rd_hi
-g72:
+g88:
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -2227,9 +2118,6 @@ g72:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2250,12 +2138,12 @@ h_7D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g73
+	jr nc,g89
 	ld a,(hl)
-	jr g74
-g73:
+	jr g90
+g89:
 	call rd_hi
-g74:
+g90:
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -2273,9 +2161,6 @@ g74:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2296,7 +2181,7 @@ h_7E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g75
+	jr nc,g91
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -2312,8 +2197,8 @@ h_7E:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g76
-g75:
+	jr g92
+g91:
 	call rd_hi
 	push hl
 	ld l,a
@@ -2329,10 +2214,7 @@ g75:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g76:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g92:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2355,15 +2237,12 @@ h_81:
 	ld a,h
 	cp $40
 	ld a,(RV_A)
-	jr nc,g79
+	jr nc,g95
 	ld (hl),a
-	jr g80
-g79:
+	jr g96
+g95:
 	call wr_hi
-g80:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g96:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2378,11 +2257,16 @@ h_84:
 	inc de
 	ld l,a
 	ld h,0
+	ld a,l
+	cp 1
 	ld a,c
+	jr z,g97
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g98
+g97:
+	call port_wr
+	ld (hl),a
+g98:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2397,11 +2281,16 @@ h_85:
 	inc de
 	ld l,a
 	ld h,0
+	ld a,l
+	cp 1
 	ld a,(RV_A)
+	jr z,g99
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g100
+g99:
+	call port_wr
+	ld (hl),a
+g100:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2416,11 +2305,16 @@ h_86:
 	inc de
 	ld l,a
 	ld h,0
+	ld a,l
+	cp 1
 	ld a,b
+	jr z,g101
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g102
+g101:
+	call port_wr
+	ld (hl),a
+g102:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2435,9 +2329,6 @@ h_88:
 	ld a,c
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2452,9 +2343,6 @@ h_8A:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2474,15 +2362,12 @@ h_8C:
 	ld a,h
 	cp $40
 	ld a,c
-	jr nc,g87
+	jr nc,g103
 	ld (hl),a
-	jr g88
-g87:
+	jr g104
+g103:
 	call wr_hi
-g88:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g104:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2502,15 +2387,12 @@ h_8D:
 	ld a,h
 	cp $40
 	ld a,(RV_A)
-	jr nc,g89
+	jr nc,g105
 	ld (hl),a
-	jr g90
-g89:
+	jr g106
+g105:
 	call wr_hi
-g90:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g106:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2530,15 +2412,12 @@ h_8E:
 	ld a,h
 	cp $40
 	ld a,b
-	jr nc,g91
+	jr nc,g107
 	ld (hl),a
-	jr g92
-g91:
+	jr g108
+g107:
 	call wr_hi
-g92:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g108:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2551,7 +2430,7 @@ g92:
 h_90:
 	ld a,(RV_C)
 	or a
-	jr nz,g93
+	jr nz,g109
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2572,11 +2451,8 @@ h_90:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g93:
+g109:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2601,15 +2477,12 @@ h_91:
 	ld a,h
 	cp $40
 	ld a,(RV_A)
-	jr nc,g94
+	jr nc,g110
 	ld (hl),a
-	jr g95
-g94:
+	jr g111
+g110:
 	call wr_hi
-g95:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g111:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2625,11 +2498,16 @@ h_94:
 	add a,b
 	ld l,a
 	ld h,0
+	ld a,l
+	cp 1
 	ld a,c
+	jr z,g112
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g113
+g112:
+	call port_wr
+	ld (hl),a
+g113:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2645,11 +2523,16 @@ h_95:
 	add a,b
 	ld l,a
 	ld h,0
+	ld a,l
+	cp 1
 	ld a,(RV_A)
+	jr z,g114
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g115
+g114:
+	call port_wr
+	ld (hl),a
+g115:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2665,11 +2548,16 @@ h_96:
 	add a,c
 	ld l,a
 	ld h,0
+	ld a,l
+	cp 1
 	ld a,b
+	jr z,g116
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g117
+g116:
+	call port_wr
+	ld (hl),a
+g117:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2684,9 +2572,6 @@ h_98:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2708,15 +2593,12 @@ h_99:
 	ld a,h
 	cp $40
 	ld a,(RV_A)
-	jr nc,g102
+	jr nc,g118
 	ld (hl),a
-	jr g103
-g102:
+	jr g119
+g118:
 	call wr_hi
-g103:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g119:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2729,9 +2611,6 @@ g103:
 h_9A:
 	ld a,b
 	ld (RV_S),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2753,15 +2632,12 @@ h_9D:
 	ld a,h
 	cp $40
 	ld a,(RV_A)
-	jr nc,g104
+	jr nc,g120
 	ld (hl),a
-	jr g105
-g104:
+	jr g121
+g120:
 	call wr_hi
-g105:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g121:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2777,9 +2653,6 @@ h_A0:
 	ld c,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2801,18 +2674,15 @@ h_A1:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g106
+	jr nc,g122
 	ld a,(hl)
-	jr g107
-g106:
+	jr g123
+g122:
 	call rd_hi
-g107:
+g123:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2828,9 +2698,6 @@ h_A2:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2849,9 +2716,6 @@ h_A4:
 	ld c,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2870,9 +2734,6 @@ h_A5:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2891,9 +2752,6 @@ h_A6:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2908,9 +2766,6 @@ h_A8:
 	ld c,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2926,9 +2781,6 @@ h_A9:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2943,9 +2795,6 @@ h_AA:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2964,18 +2813,15 @@ h_AC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g108
+	jr nc,g124
 	ld a,(hl)
-	jr g109
-g108:
+	jr g125
+g124:
 	call rd_hi
-g109:
+g125:
 	ld c,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2994,18 +2840,15 @@ h_AD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g110
+	jr nc,g126
 	ld a,(hl)
-	jr g111
-g110:
+	jr g127
+g126:
 	call rd_hi
-g111:
+g127:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3024,18 +2867,15 @@ h_AE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g112
+	jr nc,g128
 	ld a,(hl)
-	jr g113
-g112:
+	jr g129
+g128:
 	call rd_hi
-g113:
+g129:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3048,7 +2888,7 @@ g113:
 h_B0:
 	ld a,(RV_C)
 	or a
-	jr z,g114
+	jr z,g130
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3069,11 +2909,8 @@ h_B0:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g114:
+g130:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3097,18 +2934,15 @@ h_B1:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g115
+	jr nc,g131
 	ld a,(hl)
-	jr g116
-g115:
+	jr g132
+g131:
 	call rd_hi
-g116:
+g132:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3128,9 +2962,6 @@ h_B4:
 	ld c,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3150,9 +2981,6 @@ h_B5:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3172,9 +3000,6 @@ h_B6:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3187,9 +3012,6 @@ h_B6:
 h_B8:
 	xor a
 	ld (RV_V),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3210,18 +3032,15 @@ h_B9:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g117
+	jr nc,g133
 	ld a,(hl)
-	jr g118
-g117:
+	jr g134
+g133:
 	call rd_hi
-g118:
+g134:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3236,9 +3055,6 @@ h_BA:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3259,18 +3075,15 @@ h_BC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g119
+	jr nc,g135
 	ld a,(hl)
-	jr g120
-g119:
+	jr g136
+g135:
 	call rd_hi
-g120:
+g136:
 	ld c,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3291,18 +3104,15 @@ h_BD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g121
+	jr nc,g137
 	ld a,(hl)
-	jr g122
-g121:
+	jr g138
+g137:
 	call rd_hi
-g122:
+g138:
 	ld (RV_A),a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3323,18 +3133,15 @@ h_BE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g123
+	jr nc,g139
 	ld a,(hl)
-	jr g124
-g123:
+	jr g140
+g139:
 	call rd_hi
-g124:
+g140:
 	ld b,a
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3355,9 +3162,6 @@ h_C0:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3379,12 +3183,12 @@ h_C1:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g125
+	jr nc,g141
 	ld a,(hl)
-	jr g126
-g125:
+	jr g142
+g141:
 	call rd_hi
-g126:
+g142:
 	ld l,a
 	ld a,(RV_A)
 	sub l
@@ -3393,9 +3197,6 @@ g126:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3419,9 +3220,6 @@ h_C4:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3445,9 +3243,6 @@ h_C5:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3468,10 +3263,17 @@ h_C6:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g143
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g144
+g143:
+	call port_wr
+	ld (hl),a
+g144:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3486,9 +3288,6 @@ h_C8:
 	ld a,c
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3509,9 +3308,6 @@ h_C9:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3526,9 +3322,6 @@ h_CA:
 	ld a,b
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3547,12 +3340,12 @@ h_CC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g127
+	jr nc,g145
 	ld a,(hl)
-	jr g128
-g127:
+	jr g146
+g145:
 	call rd_hi
-g128:
+g146:
 	ld l,a
 	ld a,c
 	sub l
@@ -3561,9 +3354,6 @@ g128:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3582,12 +3372,12 @@ h_CD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g129
+	jr nc,g147
 	ld a,(hl)
-	jr g130
-g129:
+	jr g148
+g147:
 	call rd_hi
-g130:
+g148:
 	ld l,a
 	ld a,(RV_A)
 	sub l
@@ -3596,9 +3386,6 @@ g130:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3617,7 +3404,7 @@ h_CE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g131
+	jr nc,g149
 	ld a,(hl)
 	push hl
 	dec a
@@ -3625,8 +3412,8 @@ h_CE:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g132
-g131:
+	jr g150
+g149:
 	call rd_hi
 	push hl
 	dec a
@@ -3634,10 +3421,7 @@ g131:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g132:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g150:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3650,7 +3434,7 @@ g132:
 h_D0:
 	ld a,(RV_Z)
 	or a
-	jr z,g135
+	jr z,g153
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3671,11 +3455,8 @@ h_D0:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g135:
+g153:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3699,12 +3480,12 @@ h_D1:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g136
+	jr nc,g154
 	ld a,(hl)
-	jr g137
-g136:
+	jr g155
+g154:
 	call rd_hi
-g137:
+g155:
 	ld l,a
 	ld a,(RV_A)
 	sub l
@@ -3713,9 +3494,6 @@ g137:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3740,9 +3518,6 @@ h_D5:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3764,10 +3539,17 @@ h_D6:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g156
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g157
+g156:
+	call port_wr
+	ld (hl),a
+g157:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3780,9 +3562,6 @@ h_D6:
 h_D8:
 	ld hl,RV_P
 	res 3,(hl)
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3803,12 +3582,12 @@ h_D9:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g138
+	jr nc,g158
 	ld a,(hl)
-	jr g139
-g138:
+	jr g159
+g158:
 	call rd_hi
-g139:
+g159:
 	ld l,a
 	ld a,(RV_A)
 	sub l
@@ -3817,9 +3596,6 @@ g139:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3840,12 +3616,12 @@ h_DD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g140
+	jr nc,g160
 	ld a,(hl)
-	jr g141
-g140:
+	jr g161
+g160:
 	call rd_hi
-g141:
+g161:
 	ld l,a
 	ld a,(RV_A)
 	sub l
@@ -3854,9 +3630,6 @@ g141:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3877,7 +3650,7 @@ h_DE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g142
+	jr nc,g162
 	ld a,(hl)
 	push hl
 	dec a
@@ -3885,8 +3658,8 @@ h_DE:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g143
-g142:
+	jr g163
+g162:
 	call rd_hi
 	push hl
 	dec a
@@ -3894,10 +3667,7 @@ g142:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g143:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g163:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3918,9 +3688,6 @@ h_E0:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3942,12 +3709,12 @@ h_E1:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g146
+	jr nc,g166
 	ld a,(hl)
-	jr g147
-g146:
+	jr g167
+g166:
 	call rd_hi
-g147:
+g167:
 	ld l,a
 	ld a,(RV_C)
 	cpl
@@ -3967,9 +3734,6 @@ g147:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3993,9 +3757,6 @@ h_E4:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4030,9 +3791,6 @@ h_E5:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4053,10 +3811,17 @@ h_E6:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g168
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g169
+g168:
+	call port_wr
+	ld (hl),a
+g169:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4071,9 +3836,6 @@ h_E8:
 	ld a,b
 	ld (RV_N),a
 	ld (RV_Z),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4105,9 +3867,6 @@ h_E9:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4118,9 +3877,6 @@ h_E9:
 	ld l,a
 	jp (hl)
 h_EA:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4139,12 +3895,12 @@ h_EC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g148
+	jr nc,g170
 	ld a,(hl)
-	jr g149
-g148:
+	jr g171
+g170:
 	call rd_hi
-g149:
+g171:
 	ld l,a
 	ld a,b
 	sub l
@@ -4153,9 +3909,6 @@ g149:
 	ccf
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4174,12 +3927,12 @@ h_ED:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g150
+	jr nc,g172
 	ld a,(hl)
-	jr g151
-g150:
+	jr g173
+g172:
 	call rd_hi
-g151:
+g173:
 	ld l,a
 	ld a,(RV_C)
 	cpl
@@ -4199,9 +3952,6 @@ g151:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4220,7 +3970,7 @@ h_EE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g152
+	jr nc,g174
 	ld a,(hl)
 	push hl
 	inc a
@@ -4228,8 +3978,8 @@ h_EE:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g153
-g152:
+	jr g175
+g174:
 	call rd_hi
 	push hl
 	inc a
@@ -4237,10 +3987,7 @@ g152:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g153:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g175:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4253,7 +4000,7 @@ g153:
 h_F0:
 	ld a,(RV_Z)
 	or a
-	jr nz,g156
+	jr nz,g178
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4274,11 +4021,8 @@ h_F0:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g156:
+g178:
 	inc de
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4302,12 +4046,12 @@ h_F1:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g157
+	jr nc,g179
 	ld a,(hl)
-	jr g158
-g157:
+	jr g180
+g179:
 	call rd_hi
-g158:
+g180:
 	ld l,a
 	ld a,(RV_C)
 	cpl
@@ -4327,9 +4071,6 @@ g158:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4365,9 +4106,6 @@ h_F5:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4389,10 +4127,17 @@ h_F6:
 	ld (RV_N),a
 	ld (RV_Z),a
 	pop hl
+	ld (RV_T),a
+	ld a,l
+	cp 1
+	ld a,(RV_T)
+	jr z,g181
 	ld (hl),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+	jr g182
+g181:
+	call port_wr
+	ld (hl),a
+g182:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4405,9 +4150,6 @@ h_F6:
 h_F8:
 	ld hl,RV_P
 	set 3,(hl)
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4428,12 +4170,12 @@ h_F9:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g159
+	jr nc,g183
 	ld a,(hl)
-	jr g160
-g159:
+	jr g184
+g183:
 	call rd_hi
-g160:
+g184:
 	ld l,a
 	ld a,(RV_C)
 	cpl
@@ -4453,9 +4195,6 @@ g160:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4476,12 +4215,12 @@ h_FD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g161
+	jr nc,g185
 	ld a,(hl)
-	jr g162
-g161:
+	jr g186
+g185:
 	call rd_hi
-g162:
+g186:
 	ld l,a
 	ld a,(RV_C)
 	cpl
@@ -4501,9 +4240,6 @@ g162:
 	rra
 	sbc a,a
 	ld (RV_C),a
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4524,7 +4260,7 @@ h_FE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g163
+	jr nc,g187
 	ld a,(hl)
 	push hl
 	inc a
@@ -4532,8 +4268,8 @@ h_FE:
 	ld (RV_Z),a
 	pop hl
 	ld (hl),a
-	jr g164
-g163:
+	jr g188
+g187:
 	call rd_hi
 	push hl
 	inc a
@@ -4541,10 +4277,7 @@ g163:
 	ld (RV_Z),a
 	pop hl
 	call wr_hi
-g164:
-	ld hl,RV_CNT
-	dec (hl)
-	jp z,emu_done
+g188:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4558,7 +4291,7 @@ g164:
 optab_lo:
 	db h_00 & 255
 	db h_01 & 255
-	db emu_bad & 255
+	db h_idle & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_05 & 255
@@ -4815,7 +4548,7 @@ optab_lo:
 optab_hi:
 	db h_00 / 256
 	db h_01 / 256
-	db emu_bad / 256
+	db h_idle / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_05 / 256
