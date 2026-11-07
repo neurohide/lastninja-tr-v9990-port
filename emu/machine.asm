@@ -1,5 +1,6 @@
 ; Last Ninja on MSX turbo R: C64 machine around the generated 6502 core.
-; ROM: ASCII16, bank 0 = this code (page 1), banks 1-4 = C64 RAM image.
+; ROM: ASCII16, bank 0 = this code (page 1), banks 1-4 = C64 RAM image,
+; bank 5 = C64 I/O page ($D000-$DFFF) captured in VICE.
 ; 6502 RAM = mapper segments SEG0..SEG0+3, I/O shadow ($D000-$DFFF) = SEG_IO,
 ; all seen through Z80 page 2.  Timing: one raster line per SLICE instructions.
 
@@ -12,8 +13,7 @@ ASCII16_P1:	equ $6000
 SLICE:		equ 16
 LINES:		equ 312
 CYC_LINE:	equ 63
-START_PC:	equ $5400
-START_PORT:	equ $37
+	include "state.inc"
 
 RV:		equ $C000
 RV_A:		equ RV+0
@@ -38,6 +38,11 @@ RV_CRA:		equ RV+24
 RV_TCNT:	equ RV+26	; 2 CIA1 timer A counter
 RV_TLAT:	equ RV+28	; 2 CIA1 timer A latch
 RV_NIRQ:	equ RV+30	; 2 IRQs taken (debug)
+rd_bg:		equ RV+32
+rd_row:		equ RV+33
+rd_line:	equ RV+34
+rd_r40:		equ RV+36	; 2
+rd_bm:		equ RV+38	; 2
 COPYRT:		equ $C100
 
 	org $4000
@@ -56,29 +61,39 @@ init:
 	ld bc,copy_end-copy_rt
 	ldir
 	call COPYRT
-	; clear the I/O shadow
-	ld a,SEG_IO
-	out (PORT_P2),a
-	ld hl,$8000
-	ld de,$8001
-	ld bc,$0FFF
-	ld (hl),0
-	ldir
+	call v_init
+	if RENDER_TEST
+	call render
+rt_halt:	jr rt_halt
+	endif
 	; machine state
 	ld hl,RV
 	ld de,RV+1
 	ld bc,63
 	ld (hl),0
 	ldir
-	ld a,$FF
+	ld a,ST_A
+	ld (RV_A),a
+	ld a,ST_X
+	ld (RV_X),a
+	ld a,ST_Y
+	ld (RV_Y),a
+	ld a,ST_S
 	ld (RV_S),a
-	ld a,$24
+	ld a,ST_P
 	ld (RV_P),a
-	ld a,$FF
-	ld (RV_TLAT),a
-	ld (RV_TLAT+1),a
-	ld (RV_TCNT),a
-	ld (RV_TCNT+1),a
+	ld hl,ST_CMP
+	ld (RV_CMP),hl
+	ld a,ST_IMR
+	ld (RV_IMR),a
+	ld a,ST_MASK
+	ld (RV_MASK),a
+	ld a,ST_CRA
+	ld (RV_CRA),a
+	ld hl,ST_TLAT
+	ld (RV_TLAT),hl
+	ld hl,ST_TCNT
+	ld (RV_TCNT),hl
 	ld a,START_PORT
 	ld hl,1
 	call wr
@@ -105,7 +120,7 @@ cr_loop:
 	pop bc
 	inc b
 	ld a,b
-	cp 4
+	cp 5			; 4 RAM segments + I/O shadow (SEG_IO = SEG0+4)
 	jr nz,cr_loop
 	xor a
 	ld (ASCII16_P1),a
@@ -205,7 +220,7 @@ ir_coll:
 ir_cia1:
 	ld a,l
 	and $0F
-	jr z,ir_ff		; port A: joystick 2 (TODO: MSX joystick)
+	jr z,ir_joy		; port A: joystick 2
 	cp 1
 	jr z,ir_ff		; port B: keyboard rows (TODO)
 	cp 4
@@ -219,6 +234,9 @@ ir_cia1:
 	xor a
 	ld (RV_ICR),a
 	ld a,b
+	jr ir_done
+ir_joy:
+	call joy_read
 	jr ir_done
 ir_ta_lo:
 	ld a,(RV_TCNT)
@@ -373,6 +391,9 @@ emu_done:
 	ld hl,(RV_FRAMES)
 	inc hl
 	ld (RV_FRAMES),hl
+	ld a,l
+	and RENDER_EVERY-1
+	call z,render
 	ld hl,0
 	jr sc_line
 sc_noframe:
@@ -463,4 +484,5 @@ ti_vec:
 	ld d,a
 	ret
 
+	include "video.asm"
 	include "core.asm"

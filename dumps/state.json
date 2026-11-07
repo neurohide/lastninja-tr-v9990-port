@@ -1,0 +1,3 @@
+{"pc": "BD14", "a": "17", "x": "0A", "y": "00", "s": "10", "p": "23", "port": "35",
+ "raster_cmp": 8, "imr": "01", "cia1_mask": "01", "cia1_cra": "01", "cia1_latch": "4800", "cia1_count": "08A1",
+ "note": "VICE x64sc, side 1, cracktro: D, all trainer prompts N, fire wait patched (cb6d ea ea), ~90 s after title. RAM: state_ram.mem, I/O $D000-$DFFF: state_io.mem"}

@@ -9,3 +9,4 @@ emu/machine.bin
 emu/machine.lbl
 emu/lastninja.rom
 emu/core.asm
+emu/state.inc

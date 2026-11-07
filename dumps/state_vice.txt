@@ -1,0 +1,79 @@
+(C:$bd14)   ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+.;bd14 17 0a 00 10 2f 35 00100011 000 000 1430799552
+(C:$bd14) VIC-II:
+>C:d000  00 00 6c 82  6c 6d 00 00  00 00 00 00  00 00 00 00   @@L.LM@@@@@@@@@@
+>C:d010  00 bb 37 00  00 06 d8 00  09 70 f1 00  00 00 00 06   @»7@@fX@iP±@@@@f
+>C:d020  f0 fd f1 f2  f3 f7 f8 f0  f0 f0 f0 f0  f0 f0 f0 ff   °½±²³·¸°°°°°°°°¿
+>C:d030  ff ff ff ff  ff ff ff ff  ff ff ff ff  ff ff ff ff   ¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿
+
+Raster cycle/line: 0/311 IRQ: 8
+Mode: Multicolor Bitmap (ECM/BMM/MCM=0/1/1)
+Colors: Border: 0 BG: d 
+Scroll X/Y: 0/3, RC 7, Idle: 1, 40x25
+VC $3e8, VCBASE $3e8, VMLI  0, Phi1 $23
+Video $c000, Bitmap $e000 (RAM)
+
+Sprites: S.0 S.1 S.2 S.3 S.4 S.5 S.6 S.7
+Enabled:  no yes yes  no  no  no  no  no
+DMA/dis:  /   /   /   /   /   /   /   / 
+Pointer: $20 $21 $22 $23 $00 $00 $00 $00
+MC:      $00 $3f $3f $00 $00 $00 $00 $00
+MCBASE:  $00 $3f $3f $00 $00 $00 $00 $00
+X-Pos:  $000$06c$06c$000$000$000$000$000
+Y-Pos:     0 130 109   0   0   0   0   0
+X/Y-Exp:  /   /   /   /   /   /   /   / 
+Pri./MC: s/  s/  s/  s/  s/  s/  s/  s/ 
+Color:     0   0   0   0   0   0   0   0
+(C:$d040) CIA1:
+>C:dc00  fe ff ff 00  a1 08 ff 04  00 00 00 01  00 00 01 08   ¾¿¿@¡h¿d@@@a@@ah
+
+ICR: 00 (mask: 01)  CTRLA: 01  CTRLB: 08, delay: 0000 rclk--14 to_ack: 00
+
+Port A: fe  DDR: ff
+Port B: ff  DDR: 00
+
+Timer A IRQ: on  running: yes  mode: continuous
+Timer A counts: System clock  PB6 output: no (Pulse)
+Timer A: 08a1 (latched 4800)
+Timer B IRQ: off  running: no  mode: one-shot
+Timer B counts: System clock  PB7 output: no (Pulse)
+Timer B: 04ff (latched 04ff)
+
+TOD IRQ: off  latched: no  running: no  mode: 60Hz
+TOD Time:  01:00:00.0 (am)
+TOD Alarm: 00:00:00.0 (am)
+
+Shift Register IRQ: off  mode: input
+Shift Register Data Buffer: 00
+Timer A SDR: delay 0f000
+
+FLAG1 IRQ: off
+(C:$dc10) CIA2:
+>C:dd00  94 ff 3f 00  ff ff ff ff  00 00 00 01  00 00 08 08   .¿?@¿¿¿¿@@@a@@hh
+
+ICR: 00 (mask: 00)  CTRLA: 08  CTRLB: 08, delay: 0000 rclk--14 to_ack: 00
+
+Port A: 94  DDR: 3f
+Port B: ff  DDR: 00
+
+Timer A IRQ: off  running: no  mode: one-shot
+Timer A counts: System clock  PB6 output: no (Pulse)
+Timer A: ffff (latched ffff)
+Timer B IRQ: off  running: no  mode: one-shot
+Timer B counts: System clock  PB7 output: no (Pulse)
+Timer B: ffff (latched ffff)
+
+TOD IRQ: off  latched: no  running: no  mode: 60Hz
+TOD Time:  01:00:00.0 (am)
+TOD Alarm: 00:00:00.0 (am)
+
+Shift Register IRQ: off  mode: input
+Shift Register Data Buffer: 00
+Timer A SDR: delay 0f000
+
+FLAG1 IRQ: off
+(C:$dd10) (C:$dd10) Saving file '/tmp/tln/st_ram.bin' from $0000 to $ffff
+(C:$dd10) (C:$dd10) Saving file '/tmp/tln/st_io.bin' from $d000 to $dfff
+(C:$dd10)   ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+.;bd14 17 0a 00 10 2f 35 00100011 000 000 1430799552
+(C:$dd10) 

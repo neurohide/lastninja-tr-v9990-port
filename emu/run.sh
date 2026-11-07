@@ -5,6 +5,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 mkdir -p "$(dirname "$OUT")"
 cat > "$OUT.tcl" <<TCL
 set throttle off
+after time 1 { catch { set videosource GFX9000 } }
 set ::log [open "$OUT.txt" w]
 proc w16 {a} { expr {[debug read memory \$a] + 256*[debug read memory [expr {\$a+1}]]} }
 proc m6502 {a} { debug read "Main RAM" [expr {4*16384 + \$a}] }

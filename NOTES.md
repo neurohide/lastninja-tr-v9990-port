@@ -41,3 +41,12 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - `ref6502.py`: Python reference CPU. `run_tests.py N`: random 150-instr programs, core run in openMSX (FS-A1GT) via `harness.asm`, regs + `$0000-$03FF` compared. `run_tests.py bisect S` finds first diverging instruction.
 - Status: 40/40 seeds pass (3 skipped where random code overwrote itself into illegal opcodes).
 - Next: load `dumps/game_run.mem` into the 4 segments, start at `$BD16`, add I/O traps for `$D000-$DFFF` (VIC/SID/CIA), raster IRQ, KERNAL LOAD -> MSX-DOS, V9990 output; then speed (inline zero-page/stack access, R800).
+
+## Emulator status (emu/)
+- Boot state: `dumps/state.json` + `state_ram.mem` + `state_io.mem`, captured in VICE mid-game (PC `$BD14`, port `$35`, raster IRQ line 8, CIA1 timer A latch `$4800`). `$5400` is NOT a valid entry for a mid-game dump (`$048A` turns all IRQs off before it; level code at `$BC66` already replaced).
+- `machine.asm`: I/O traps ($D000-$DFFF when port shows I/O), CPU port, VIC raster IRQ + IMR/IRR, CIA1 timer A + ICR, IRQ entry (hardware `$FFFE` or KERNAL-style via `$0314`), scheduler = 1 raster line per 16 instructions, 312 lines/frame.
+- `video.asm`: V9990 B3 512px 4bpp, palette = C64 colours; multicolour bitmap ($C000 screen, $E000 bitmap, colour RAM) redrawn every 4 emulated frames; MSX joystick 1 / cursor+space -> `$DC00`.
+- Verified: screen matches reference VIC render of the dump; game keeps running (IRQs ~2/frame, `$1B` advances).
+- Speed: ~1 emulated frame/s (~5k 6502 instr/s) vs 50 needed. Core unoptimised.
+- TODO: sprites, speed, SID->PSG, KERNAL LOAD -> MSX-DOS disk (level change), keyboard matrix ($DC01), title/menu screens (fixed VIC bank in renderer).
+- `RENDER_TEST=1 python3 emu/build.py`: render captured screen once and halt (renderer check).
