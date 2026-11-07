@@ -64,3 +64,11 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - MC/hires, X/Y expand, clipping to the 480x200 window. Not done: sprite-background priority ($D01B), collisions, multiplexing.
 - Verified: ninja drawn and walks with cursor keys; 50 frames/s with input.
 - Open question: POWER/WEAPONRY panels empty in both our render and the reference render of the dump; compare with a VICE screenshot.
+
+## Disk loading (emu/kernal.asm, emu/mkdsk.py)
+- `emu/mkdsk.py` -> `emu/lastninja.dsk`: 720K FAT12 MSX-DOS disk with the original C64 files from `disk/c64/` (HF, LA1..LF4; contents unchanged, PRG load address kept).
+- Boot: cartridge init only hooks H.STKE (CALLF into the ROM); the emulator starts after the disk ROM is up. Z80 stack moved to $E400 (HIMEM is $E5A8 on the FS-A1GT).
+- DOS bridge (page 3, $C800): page 0 back to the BIOS slot, page 2 to its original segment, EI, BDOS FCB call, DI, restore.
+- KERNAL traps: setpc -> kernal_trap for targets $E000-$FFFF while the KERNAL is mapped. Done: SETMSG SETLFS SETNAM OPEN CLOSE CHKIN CLRCHN CHRIN READST LOAD GETIN CHROUT CLALL, $F642. Unknown address: halt with it in k_bad ($C890).
+- Level load check: `LOADTEST=1 python3 emu/embuild.py` runs `jsr $0400` (LOAD "HF") + `jsr $0450` (hf streams LA1 via CHRIN and depacks); RAM afterwards equals `emu/ref_load.py` (same load on ref6502) byte for byte.
+- Not yet seen: a real level change triggered by the game itself (needs playing to the end of level 1).

@@ -38,6 +38,11 @@ def game():
         assert ram[a] == old, 'patch %04X: %02X' % (a, ram[a])
         ram[a] = new
     io = open(os.path.join(ROOT, 'dumps', 'state_io.mem'), 'rb').read()
+    if os.environ.get('LOADTEST'):           # load level part 1 through the game's loader, then stop
+        stub = bytes([0x20, 0x00, 0x04, 0x20, 0x50, 0x04, 0x4C, 0x46, 0x03])   # $0340: jsr $0400 (HF) / jsr $0450 / jmp $0346
+        ram[0x340:0x349] = stub
+        ram[0x4F2] = ord('1')
+        sym['START_PC'] = 0x340
     n = build(sym, ram, io, os.path.join(HERE, 'lastninja.rom'))
     print('lastninja.rom: bank0 %d bytes' % n)
 

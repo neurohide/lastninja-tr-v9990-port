@@ -68,6 +68,28 @@ RV_DEADLINE:	equ RV+52	; 2 system timer value of the next frame start
 RV_LATE:	equ RV+54	; 2 frames we were late (debug)
 TICKS_FRAME:	equ 5114		; 20 ms in 3.911 us system timer ticks
 BOOTRT:		equ $C100
+DOSRT:		equ $C800		; DOS bridge (copied to page 3)
+FCB:		equ $C8C0		; 37 bytes
+FBUF:		equ $D000		; 4K file buffer
+FBUF_LEN:	equ $1000
+STACK:		equ $E400		; below HIMEM ($E5A8 with the disk system)
+H_STKE:		equ $FEDA
+SLTTBL:		equ $FCC5
+BDOS:		equ $F37D
+KV:		equ $C880		; KERNAL emulation variables
+k_dev:		equ KV+0
+k_sa:		equ KV+1
+k_fnlen:	equ KV+2
+k_open:		equ KV+3	; 1 = FCB open
+k_eof:		equ KV+4	; 1 = last block read
+k_pos:		equ KV+6	; 2
+k_len:		equ KV+8	; 2
+k_addr:		equ KV+10	; 2 LOAD address
+k_romslot:	equ KV+12
+k_a8:		equ KV+13	; A8 at start (page 0 = BIOS slot)
+k_p2seg:	equ KV+14	; mapper segment of page 2 at start
+k_bad:		equ KV+16	; 2 unknown KERNAL address (debug)
+k_fname:	equ KV+20	; 16
 DIRTY:		equ $C400		; 64 flags: VIC bank 3 pages ($C000-$FFFF)
 
 	org $4000
@@ -78,6 +100,48 @@ DIRTY:		equ $C400		; 64 flags: VIC bank 3 pages ($C000-$FFFF)
 
 init:
 	if TEST = 0
+	; run from H.STKE (after the disk ROM has initialised): CALLF to start
+	call RSLREG
+	rrca
+	rrca
+	and 3
+	ld c,a
+	ld b,0
+	ld hl,EXPTBL
+	add hl,bc
+	ld a,(hl)
+	and $80
+	or c
+	ld c,a
+	jr z,in_slot
+	ld hl,SLTTBL
+	ld e,c
+	res 7,e
+	ld d,0
+	add hl,de
+	ld a,(hl)
+	and $0C
+	or c
+	ld c,a
+in_slot:
+	ld hl,H_STKE
+	ld (hl),$F7		; rst $30
+	inc hl
+	ld (hl),c
+	inc hl
+	ld (hl),start & 255
+	inc hl
+	ld (hl),start / 256
+	inc hl
+	ld (hl),$C9
+	ret
+start:
+	ld a,$C9
+	ld (H_STKE),a
+	in a,($A8)
+	ld (k_a8),a
+	in a,(PORT_P2)
+	ld (k_p2seg),a
 	ld a,$81		; R800 ROM mode
 	call CHGCPU
 	endif
@@ -103,7 +167,11 @@ init:
 in_noexp:
 	ld (RV_RAMSUB),a
 	di
-	ld sp,$F000
+	ld sp,STACK
+	ld hl,dos_rt
+	ld de,DOSRT
+	ld bc,dos_end-dos_rt
+	ldir
 	ld hl,boot_rt
 	ld de,BOOTRT
 	ld bc,boot_end-boot_rt
@@ -168,6 +236,40 @@ br_loop:			; banks 1-5 -> SEG0..SEG0+4
 br_done:
 	jp init2
 boot_end:
+
+; ---- DOS bridge: runs from page 3 (page 1 is swapped by the disk ROM) --------
+; call DOSRT with C = BDOS function, DE/HL = parameters; returns A, HL.
+; Page 0 goes back to the BIOS slot and page 2 to its original segment for the
+; call (interrupts on, BIOS ISR), then pages 0/2 return to the emulator.
+dos_rt:
+	push hl
+	in a,($A8)
+	and $FC
+	ld l,a
+	ld a,(k_a8)
+	and 3
+	or l
+	out ($A8),a
+	ld a,(k_p2seg)
+	out (PORT_P2),a
+	pop hl
+	ei
+	call BDOS
+	di
+	push af
+	push hl
+	in a,($A8)
+	and $FC
+	ld l,a
+	ld a,(RV_RAMPRIM)
+	or l
+	out ($A8),a
+	ld a,(RV_CODESEG)
+	out (PORT_P2),a
+	pop hl
+	pop af
+	ret
+dos_end:
 
 ; ---- now running from RAM ---------------------------------------------------
 init2:
@@ -243,6 +345,15 @@ setpc:
 	ld e,l
 	ret
 sp_hi:
+	if TRAPS
+	cp $E0
+	jr c,sp_ram
+	ld a,(RV_KERN)
+	or a
+	jp nz,kernal_trap
+	ld a,h
+sp_ram:
+	endif
 	rlca
 	rlca
 	and 3
@@ -1026,4 +1137,5 @@ emu_bad:			; illegal opcode: stop (PC in DE)
 	jr emu_bad
 
 	include "video.asm"
+	include "kernal.asm"
 	include "core.asm"

@@ -10,3 +10,4 @@ emu/machine.lbl
 emu/lastninja.rom
 emu/core.asm
 emu/state.inc
+emu/lastninja.dsk

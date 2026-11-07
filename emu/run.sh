@@ -18,6 +18,6 @@ after time 1 tick
 $EXTRA
 after time $SECS { screenshot $OUT.png; close \$::log; exit }
 TCL
-"${OPENMSX:-openmsx}" -machine Panasonic_FS-A1GT -ext gfx9000 -cart "$HERE/lastninja.rom" -romtype ASCII16 \
+"${OPENMSX:-openmsx}" -machine Panasonic_FS-A1GT -ext gfx9000 -cart "$HERE/lastninja.rom" -romtype ASCII16 -diska "$HERE/lastninja.dsk" \
   -script "$OUT.tcl" > "$OUT.log" 2>&1
 cat "$OUT.txt" | tail -${TAIL:-8}
