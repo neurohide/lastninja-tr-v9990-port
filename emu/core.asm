@@ -54,14 +54,23 @@ h_01:
 	ld a,(hl)
 	jr g2
 g1:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g3
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g2
+g3:
 	call rd_hi
 g2:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -78,11 +87,11 @@ h_05:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -104,20 +113,10 @@ h_06:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g3
 	ld (hl),a
-	jr g4
-g3:
-	call port_wr
-	ld (hl),a
-g4:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -147,11 +146,11 @@ h_09:
 	ld a,(de)
 	inc de
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -162,15 +161,15 @@ h_09:
 	ld l,a
 	jp (hl)
 h_0A:
-	ld a,(RV_A)
+	db $FD,$7D
 	add a,a
 	ld l,a
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
-	ld (RV_A),a
+	db $DD,$67
+	db $DD,$6F
+	db $FD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -189,18 +188,27 @@ h_0D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g5
+	jr nc,g4
 	ld a,(hl)
-	jr g6
-g5:
-	call rd_hi
+	jr g5
+g4:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g6
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g5
 g6:
+	call rd_hi
+g5:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -227,8 +235,8 @@ h_0E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
 	jr g8
@@ -240,8 +248,8 @@ g7:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
 g8:
@@ -255,7 +263,7 @@ g8:
 	ld l,a
 	jp (hl)
 h_10:
-	ld a,(RV_N)
+	db $DD,$7C
 	rla
 	jr c,g11
 	ld a,(de)
@@ -307,14 +315,23 @@ h_11:
 	ld a,(hl)
 	jr g13
 g12:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g14
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g13
+g14:
 	call rd_hi
 g13:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -332,11 +349,11 @@ h_15:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -359,20 +376,10 @@ h_16:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g14
 	ld (hl),a
-	jr g15
-g14:
-	call port_wr
-	ld (hl),a
-g15:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -405,18 +412,27 @@ h_19:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g16
+	jr nc,g15
 	ld a,(hl)
-	jr g17
-g16:
-	call rd_hi
+	jr g16
+g15:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g17
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g16
 g17:
+	call rd_hi
+g16:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -441,14 +457,23 @@ h_1D:
 	ld a,(hl)
 	jr g19
 g18:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g20
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g19
+g20:
 	call rd_hi
 g19:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	or l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -469,7 +494,7 @@ h_1E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g20
+	jr nc,g21
 	ld a,(hl)
 	push hl
 	add a,a
@@ -477,12 +502,12 @@ h_1E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g21
-g20:
+	jr g22
+g21:
 	call rd_hi
 	push hl
 	add a,a
@@ -490,11 +515,11 @@ g20:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g21:
+g22:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -545,18 +570,27 @@ h_21:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g24
+	jr nc,g25
 	ld a,(hl)
-	jr g25
-g24:
-	call rd_hi
+	jr g26
 g25:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g27
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g26
+g27:
+	call rd_hi
+g26:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -572,13 +606,13 @@ h_24:
 	ld l,a
 	ld h,0
 	ld a,(hl)
-	ld (RV_N),a
+	db $DD,$67
 	ld l,a
 	and $40
 	ld (RV_V),a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_Z),a
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -595,11 +629,11 @@ h_25:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -625,20 +659,10 @@ h_26:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g26
 	ld (hl),a
-	jr g27
-g26:
-	call port_wr
-	ld (hl),a
-g27:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -667,11 +691,11 @@ h_29:
 	ld a,(de)
 	inc de
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -682,7 +706,7 @@ h_29:
 	ld l,a
 	jp (hl)
 h_2A:
-	ld a,(RV_A)
+	db $FD,$7D
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -692,9 +716,9 @@ h_2A:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
-	ld (RV_A),a
+	db $DD,$67
+	db $DD,$6F
+	db $FD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -717,15 +741,24 @@ h_2C:
 	ld a,(hl)
 	jr g29
 g28:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g30
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g29
+g30:
 	call rd_hi
 g29:
-	ld (RV_N),a
+	db $DD,$67
 	ld l,a
 	and $40
 	ld (RV_V),a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_Z),a
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -744,18 +777,27 @@ h_2D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g30
+	jr nc,g31
 	ld a,(hl)
-	jr g31
-g30:
-	call rd_hi
+	jr g32
 g31:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g33
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g32
+g33:
+	call rd_hi
+g32:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -774,7 +816,7 @@ h_2E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g32
+	jr nc,g34
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -786,12 +828,12 @@ h_2E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g33
-g32:
+	jr g35
+g34:
 	call rd_hi
 	push hl
 	ld l,a
@@ -803,11 +845,11 @@ g32:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g33:
+g35:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -818,9 +860,9 @@ g33:
 	ld l,a
 	jp (hl)
 h_30:
-	ld a,(RV_N)
+	db $DD,$7C
 	rla
-	jr nc,g36
+	jr nc,g38
 	ld a,(de)
 	inc de
 	ld l,a
@@ -841,7 +883,7 @@ h_30:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g36:
+g38:
 	inc de
 	ld a,(de)
 	inc de
@@ -866,18 +908,27 @@ h_31:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g37
+	jr nc,g39
 	ld a,(hl)
-	jr g38
-g37:
+	jr g40
+g39:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g41
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g40
+g41:
 	call rd_hi
-g38:
+g40:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -895,11 +946,11 @@ h_35:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -926,20 +977,10 @@ h_36:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g39
 	ld (hl),a
-	jr g40
-g39:
-	call port_wr
-	ld (hl),a
-g40:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -972,18 +1013,27 @@ h_39:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g41
+	jr nc,g42
 	ld a,(hl)
-	jr g42
-g41:
-	call rd_hi
+	jr g43
 g42:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g44
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g43
+g44:
+	call rd_hi
+g43:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1004,18 +1054,27 @@ h_3D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g43
+	jr nc,g45
 	ld a,(hl)
-	jr g44
-g43:
+	jr g46
+g45:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g47
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g46
+g47:
 	call rd_hi
-g44:
+g46:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	and l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1036,7 +1095,7 @@ h_3E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g45
+	jr nc,g48
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -1048,12 +1107,12 @@ h_3E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g46
-g45:
+	jr g49
+g48:
 	call rd_hi
 	push hl
 	ld l,a
@@ -1065,11 +1124,11 @@ g45:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g46:
+g49:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1119,18 +1178,27 @@ h_41:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g49
+	jr nc,g52
 	ld a,(hl)
-	jr g50
-g49:
+	jr g53
+g52:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g54
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g53
+g54:
 	call rd_hi
-g50:
+g53:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1147,11 +1215,11 @@ h_45:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1173,20 +1241,10 @@ h_46:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g51
 	ld (hl),a
-	jr g52
-g51:
-	call port_wr
-	ld (hl),a
-g52:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1197,7 +1255,7 @@ g52:
 	ld l,a
 	jp (hl)
 h_48:
-	ld a,(RV_A)
+	db $FD,$7D
 	ld hl,(RV_S)
 	ld (hl),a
 	dec l
@@ -1215,11 +1273,11 @@ h_49:
 	ld a,(de)
 	inc de
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1230,15 +1288,15 @@ h_49:
 	ld l,a
 	jp (hl)
 h_4A:
-	ld a,(RV_A)
+	db $FD,$7D
 	srl a
 	ld l,a
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
-	ld (RV_A),a
+	db $DD,$67
+	db $DD,$6F
+	db $FD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1276,18 +1334,27 @@ h_4D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g53
+	jr nc,g55
 	ld a,(hl)
-	jr g54
-g53:
+	jr g56
+g55:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g57
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g56
+g57:
 	call rd_hi
-g54:
+g56:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1306,7 +1373,7 @@ h_4E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g55
+	jr nc,g58
 	ld a,(hl)
 	push hl
 	srl a
@@ -1314,12 +1381,12 @@ h_4E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g56
-g55:
+	jr g59
+g58:
 	call rd_hi
 	push hl
 	srl a
@@ -1327,11 +1394,11 @@ g55:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g56:
+g59:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1344,7 +1411,7 @@ g56:
 h_50:
 	ld a,(RV_V)
 	or a
-	jr nz,g59
+	jr nz,g62
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1365,7 +1432,7 @@ h_50:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g59:
+g62:
 	inc de
 	ld a,(de)
 	inc de
@@ -1390,18 +1457,27 @@ h_51:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g60
+	jr nc,g63
 	ld a,(hl)
-	jr g61
-g60:
+	jr g64
+g63:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g65
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g64
+g65:
 	call rd_hi
-g61:
+g64:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1419,11 +1495,11 @@ h_55:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1446,20 +1522,10 @@ h_56:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g62
 	ld (hl),a
-	jr g63
-g62:
-	call port_wr
-	ld (hl),a
-g63:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1492,18 +1558,27 @@ h_59:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g64
+	jr nc,g66
 	ld a,(hl)
-	jr g65
-g64:
+	jr g67
+g66:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g68
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g67
+g68:
 	call rd_hi
-g65:
+g67:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1524,18 +1599,27 @@ h_5D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g66
+	jr nc,g69
 	ld a,(hl)
-	jr g67
-g66:
+	jr g70
+g69:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g71
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g70
+g71:
 	call rd_hi
-g67:
+g70:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	xor l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1556,7 +1640,7 @@ h_5E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g68
+	jr nc,g72
 	ld a,(hl)
 	push hl
 	srl a
@@ -1564,12 +1648,12 @@ h_5E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g69
-g68:
+	jr g73
+g72:
 	call rd_hi
 	push hl
 	srl a
@@ -1577,11 +1661,11 @@ g68:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g69:
+g73:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1627,20 +1711,29 @@ h_61:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g72
+	jr nc,g76
 	ld a,(hl)
-	jr g73
-g72:
+	jr g77
+g76:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g78
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g77
+g78:
 	call rd_hi
-g73:
+g77:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -1668,11 +1761,11 @@ h_65:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -1707,20 +1800,10 @@ h_66:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g74
 	ld (hl),a
-	jr g75
-g74:
-	call port_wr
-	ld (hl),a
-g75:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1735,9 +1818,9 @@ h_68:
 	inc l
 	ld (RV_S),hl
 	ld a,(hl)
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1753,11 +1836,11 @@ h_69:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -1777,7 +1860,7 @@ h_69:
 	ld l,a
 	jp (hl)
 h_6A:
-	ld a,(RV_A)
+	db $FD,$7D
 	ld l,a
 	ld a,(RV_C)
 	rra
@@ -1787,9 +1870,9 @@ h_6A:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
-	ld (RV_A),a
+	db $DD,$67
+	db $DD,$6F
+	db $FD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1834,20 +1917,29 @@ h_6D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g76
+	jr nc,g79
 	ld a,(hl)
-	jr g77
-g76:
+	jr g80
+g79:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g81
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g80
+g81:
 	call rd_hi
-g77:
+g80:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -1875,7 +1967,7 @@ h_6E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g78
+	jr nc,g82
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -1887,12 +1979,12 @@ h_6E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g79
-g78:
+	jr g83
+g82:
 	call rd_hi
 	push hl
 	ld l,a
@@ -1904,11 +1996,11 @@ g78:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g79:
+g83:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1921,7 +2013,7 @@ g79:
 h_70:
 	ld a,(RV_V)
 	or a
-	jr z,g82
+	jr z,g86
 	ld a,(de)
 	inc de
 	ld l,a
@@ -1942,7 +2034,7 @@ h_70:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g82:
+g86:
 	inc de
 	ld a,(de)
 	inc de
@@ -1967,20 +2059,29 @@ h_71:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g83
+	jr nc,g87
 	ld a,(hl)
-	jr g84
-g83:
+	jr g88
+g87:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g89
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g88
+g89:
 	call rd_hi
-g84:
+g88:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -2009,11 +2110,11 @@ h_75:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -2049,20 +2150,10 @@ h_76:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g85
 	ld (hl),a
-	jr g86
-g85:
-	call port_wr
-	ld (hl),a
-g86:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2095,20 +2186,29 @@ h_79:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g87
+	jr nc,g90
 	ld a,(hl)
-	jr g88
-g87:
+	jr g91
+g90:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g92
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g91
+g92:
 	call rd_hi
-g88:
+g91:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -2138,20 +2238,29 @@ h_7D:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g89
+	jr nc,g93
 	ld a,(hl)
-	jr g90
-g89:
+	jr g94
+g93:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g95
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g94
+g95:
 	call rd_hi
-g90:
+g94:
 	ld l,a
 	ld a,(RV_C)
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	adc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -2181,7 +2290,7 @@ h_7E:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g91
+	jr nc,g96
 	ld a,(hl)
 	push hl
 	ld l,a
@@ -2193,12 +2302,12 @@ h_7E:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g92
-g91:
+	jr g97
+g96:
 	call rd_hi
 	push hl
 	ld l,a
@@ -2210,11 +2319,11 @@ g91:
 	sbc a,a
 	ld (RV_C),a
 	ld a,l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g92:
+g97:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2236,13 +2345,23 @@ h_81:
 	ld l,a
 	ld a,h
 	cp $40
-	ld a,(RV_A)
-	jr nc,g95
+	db $FD,$7D
+	jr nc,g100
 	ld (hl),a
-	jr g96
-g95:
+	jr g101
+g100:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	db $FD,$7D
+	jr nz,g102
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g101
+g102:
 	call wr_hi
-g96:
+g101:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2257,16 +2376,8 @@ h_84:
 	inc de
 	ld l,a
 	ld h,0
-	ld a,l
-	cp 1
 	ld a,c
-	jr z,g97
 	ld (hl),a
-	jr g98
-g97:
-	call port_wr
-	ld (hl),a
-g98:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2281,16 +2392,8 @@ h_85:
 	inc de
 	ld l,a
 	ld h,0
-	ld a,l
-	cp 1
-	ld a,(RV_A)
-	jr z,g99
+	db $FD,$7D
 	ld (hl),a
-	jr g100
-g99:
-	call port_wr
-	ld (hl),a
-g100:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2305,16 +2408,8 @@ h_86:
 	inc de
 	ld l,a
 	ld h,0
-	ld a,l
-	cp 1
 	ld a,b
-	jr z,g101
 	ld (hl),a
-	jr g102
-g101:
-	call port_wr
-	ld (hl),a
-g102:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2327,8 +2422,8 @@ g102:
 h_88:
 	dec c
 	ld a,c
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2340,9 +2435,9 @@ h_88:
 	jp (hl)
 h_8A:
 	ld a,b
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2362,12 +2457,22 @@ h_8C:
 	ld a,h
 	cp $40
 	ld a,c
-	jr nc,g103
+	jr nc,g109
 	ld (hl),a
-	jr g104
-g103:
+	jr g110
+g109:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	ld a,c
+	jr nz,g111
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g110
+g111:
 	call wr_hi
-g104:
+g110:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2386,13 +2491,23 @@ h_8D:
 	ld h,a
 	ld a,h
 	cp $40
-	ld a,(RV_A)
-	jr nc,g105
+	db $FD,$7D
+	jr nc,g112
 	ld (hl),a
-	jr g106
-g105:
+	jr g113
+g112:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	db $FD,$7D
+	jr nz,g114
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g113
+g114:
 	call wr_hi
-g106:
+g113:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2412,12 +2527,22 @@ h_8E:
 	ld a,h
 	cp $40
 	ld a,b
-	jr nc,g107
+	jr nc,g115
 	ld (hl),a
-	jr g108
-g107:
+	jr g116
+g115:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	ld a,b
+	jr nz,g117
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g116
+g117:
 	call wr_hi
-g108:
+g116:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2430,7 +2555,7 @@ g108:
 h_90:
 	ld a,(RV_C)
 	or a
-	jr nz,g109
+	jr nz,g118
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2451,7 +2576,7 @@ h_90:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g109:
+g118:
 	inc de
 	ld a,(de)
 	inc de
@@ -2476,13 +2601,23 @@ h_91:
 	inc h
 	ld a,h
 	cp $40
-	ld a,(RV_A)
-	jr nc,g110
+	db $FD,$7D
+	jr nc,g119
 	ld (hl),a
-	jr g111
-g110:
+	jr g120
+g119:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	db $FD,$7D
+	jr nz,g121
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g120
+g121:
 	call wr_hi
-g111:
+g120:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2498,16 +2633,8 @@ h_94:
 	add a,b
 	ld l,a
 	ld h,0
-	ld a,l
-	cp 1
 	ld a,c
-	jr z,g112
 	ld (hl),a
-	jr g113
-g112:
-	call port_wr
-	ld (hl),a
-g113:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2523,16 +2650,8 @@ h_95:
 	add a,b
 	ld l,a
 	ld h,0
-	ld a,l
-	cp 1
-	ld a,(RV_A)
-	jr z,g114
+	db $FD,$7D
 	ld (hl),a
-	jr g115
-g114:
-	call port_wr
-	ld (hl),a
-g115:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2548,16 +2667,8 @@ h_96:
 	add a,c
 	ld l,a
 	ld h,0
-	ld a,l
-	cp 1
 	ld a,b
-	jr z,g116
 	ld (hl),a
-	jr g117
-g116:
-	call port_wr
-	ld (hl),a
-g117:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2569,9 +2680,9 @@ g117:
 	jp (hl)
 h_98:
 	ld a,c
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2592,13 +2703,23 @@ h_99:
 	ld h,a
 	ld a,h
 	cp $40
-	ld a,(RV_A)
-	jr nc,g118
+	db $FD,$7D
+	jr nc,g128
 	ld (hl),a
-	jr g119
-g118:
+	jr g129
+g128:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	db $FD,$7D
+	jr nz,g130
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g129
+g130:
 	call wr_hi
-g119:
+g129:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2631,13 +2752,23 @@ h_9D:
 	ld h,a
 	ld a,h
 	cp $40
-	ld a,(RV_A)
-	jr nc,g120
+	db $FD,$7D
+	jr nc,g131
 	ld (hl),a
-	jr g121
-g120:
+	jr g132
+g131:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	db $FD,$7D
+	jr nz,g133
+	set 7,h
+	res 6,h
+	ld (hl),a
+	jr g132
+g133:
 	call wr_hi
-g121:
+g132:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2651,8 +2782,8 @@ h_A0:
 	ld a,(de)
 	inc de
 	ld c,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2674,15 +2805,24 @@ h_A1:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g122
+	jr nc,g134
 	ld a,(hl)
-	jr g123
-g122:
+	jr g135
+g134:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g136
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g135
+g136:
 	call rd_hi
-g123:
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+g135:
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2696,8 +2836,8 @@ h_A2:
 	ld a,(de)
 	inc de
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2714,8 +2854,8 @@ h_A4:
 	ld h,0
 	ld a,(hl)
 	ld c,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2731,9 +2871,9 @@ h_A5:
 	ld l,a
 	ld h,0
 	ld a,(hl)
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2750,8 +2890,8 @@ h_A6:
 	ld h,0
 	ld a,(hl)
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2762,10 +2902,10 @@ h_A6:
 	ld l,a
 	jp (hl)
 h_A8:
-	ld a,(RV_A)
+	db $FD,$7D
 	ld c,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2778,9 +2918,9 @@ h_A8:
 h_A9:
 	ld a,(de)
 	inc de
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2791,10 +2931,10 @@ h_A9:
 	ld l,a
 	jp (hl)
 h_AA:
-	ld a,(RV_A)
+	db $FD,$7D
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2813,15 +2953,24 @@ h_AC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g124
+	jr nc,g137
 	ld a,(hl)
-	jr g125
-g124:
+	jr g138
+g137:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g139
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g138
+g139:
 	call rd_hi
-g125:
+g138:
 	ld c,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2840,15 +2989,24 @@ h_AD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g126
+	jr nc,g140
 	ld a,(hl)
-	jr g127
-g126:
+	jr g141
+g140:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g142
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g141
+g142:
 	call rd_hi
-g127:
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+g141:
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2867,15 +3025,24 @@ h_AE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g128
+	jr nc,g143
 	ld a,(hl)
-	jr g129
-g128:
+	jr g144
+g143:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g145
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g144
+g145:
 	call rd_hi
-g129:
+g144:
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2888,7 +3055,7 @@ g129:
 h_B0:
 	ld a,(RV_C)
 	or a
-	jr z,g130
+	jr z,g146
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2909,7 +3076,7 @@ h_B0:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g130:
+g146:
 	inc de
 	ld a,(de)
 	inc de
@@ -2934,15 +3101,24 @@ h_B1:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g131
+	jr nc,g147
 	ld a,(hl)
-	jr g132
-g131:
+	jr g148
+g147:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g149
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g148
+g149:
 	call rd_hi
-g132:
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+g148:
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2960,8 +3136,8 @@ h_B4:
 	ld h,0
 	ld a,(hl)
 	ld c,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2978,9 +3154,9 @@ h_B5:
 	ld l,a
 	ld h,0
 	ld a,(hl)
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -2998,8 +3174,8 @@ h_B6:
 	ld h,0
 	ld a,(hl)
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3032,15 +3208,24 @@ h_B9:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g133
+	jr nc,g150
 	ld a,(hl)
-	jr g134
-g133:
+	jr g151
+g150:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g152
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g151
+g152:
 	call rd_hi
-g134:
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+g151:
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3053,8 +3238,8 @@ g134:
 h_BA:
 	ld a,(RV_S)
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3075,15 +3260,24 @@ h_BC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g135
+	jr nc,g153
 	ld a,(hl)
-	jr g136
-g135:
+	jr g154
+g153:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g155
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g154
+g155:
 	call rd_hi
-g136:
+g154:
 	ld c,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3104,15 +3298,24 @@ h_BD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g137
+	jr nc,g156
 	ld a,(hl)
-	jr g138
-g137:
+	jr g157
+g156:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g158
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g157
+g158:
 	call rd_hi
-g138:
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+g157:
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3133,15 +3336,24 @@ h_BE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g139
+	jr nc,g159
 	ld a,(hl)
-	jr g140
-g139:
+	jr g160
+g159:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g161
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g160
+g161:
 	call rd_hi
-g140:
+g160:
 	ld b,a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3157,8 +3369,8 @@ h_C0:
 	ld l,a
 	ld a,c
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3183,17 +3395,26 @@ h_C1:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g141
+	jr nc,g162
 	ld a,(hl)
-	jr g142
-g141:
+	jr g163
+g162:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g164
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g163
+g164:
 	call rd_hi
-g142:
+g163:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3215,8 +3436,8 @@ h_C4:
 	ld l,a
 	ld a,c
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3236,10 +3457,10 @@ h_C5:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3260,20 +3481,10 @@ h_C6:
 	ld a,(hl)
 	push hl
 	dec a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g143
 	ld (hl),a
-	jr g144
-g143:
-	call port_wr
-	ld (hl),a
-g144:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3286,8 +3497,8 @@ g144:
 h_C8:
 	inc c
 	ld a,c
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3301,10 +3512,10 @@ h_C9:
 	ld a,(de)
 	inc de
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3320,8 +3531,8 @@ h_C9:
 h_CA:
 	dec b
 	ld a,b
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3340,17 +3551,26 @@ h_CC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g145
+	jr nc,g165
 	ld a,(hl)
-	jr g146
-g145:
+	jr g166
+g165:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g167
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g166
+g167:
 	call rd_hi
-g146:
+g166:
 	ld l,a
 	ld a,c
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3372,17 +3592,26 @@ h_CD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g147
+	jr nc,g168
 	ld a,(hl)
-	jr g148
-g147:
+	jr g169
+g168:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g170
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g169
+g170:
 	call rd_hi
-g148:
+g169:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3404,24 +3633,24 @@ h_CE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g149
+	jr nc,g171
 	ld a,(hl)
 	push hl
 	dec a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g150
-g149:
+	jr g172
+g171:
 	call rd_hi
 	push hl
 	dec a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g150:
+g172:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3432,9 +3661,9 @@ g150:
 	ld l,a
 	jp (hl)
 h_D0:
-	ld a,(RV_Z)
+	db $DD,$7D
 	or a
-	jr z,g153
+	jr z,g175
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3455,7 +3684,7 @@ h_D0:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g153:
+g175:
 	inc de
 	ld a,(de)
 	inc de
@@ -3480,17 +3709,26 @@ h_D1:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g154
+	jr nc,g176
 	ld a,(hl)
-	jr g155
-g154:
+	jr g177
+g176:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g178
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g177
+g178:
 	call rd_hi
-g155:
+g177:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3511,10 +3749,10 @@ h_D5:
 	ld h,0
 	ld a,(hl)
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3536,20 +3774,10 @@ h_D6:
 	ld a,(hl)
 	push hl
 	dec a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g156
 	ld (hl),a
-	jr g157
-g156:
-	call port_wr
-	ld (hl),a
-g157:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3582,17 +3810,26 @@ h_D9:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g158
+	jr nc,g179
 	ld a,(hl)
-	jr g159
-g158:
+	jr g180
+g179:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g181
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g180
+g181:
 	call rd_hi
-g159:
+g180:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3616,17 +3853,26 @@ h_DD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g160
+	jr nc,g182
 	ld a,(hl)
-	jr g161
-g160:
+	jr g183
+g182:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g184
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g183
+g184:
 	call rd_hi
-g161:
+g183:
 	ld l,a
-	ld a,(RV_A)
+	db $FD,$7D
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3650,24 +3896,24 @@ h_DE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g162
+	jr nc,g185
 	ld a,(hl)
 	push hl
 	dec a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g163
-g162:
+	jr g186
+g185:
 	call rd_hi
 	push hl
 	dec a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g163:
+g186:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3683,8 +3929,8 @@ h_E0:
 	ld l,a
 	ld a,b
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3709,21 +3955,30 @@ h_E1:
 	ld l,a
 	ld a,h
 	cp $40
-	jr nc,g166
+	jr nc,g189
 	ld a,(hl)
-	jr g167
-g166:
+	jr g190
+g189:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g191
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g190
+g191:
 	call rd_hi
-g167:
+g190:
 	ld l,a
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -3752,8 +4007,8 @@ h_E4:
 	ld l,a
 	ld a,b
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3776,11 +4031,11 @@ h_E5:
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -3808,20 +4063,10 @@ h_E6:
 	ld a,(hl)
 	push hl
 	inc a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g168
 	ld (hl),a
-	jr g169
-g168:
-	call port_wr
-	ld (hl),a
-g169:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3834,8 +4079,8 @@ g169:
 h_E8:
 	inc b
 	ld a,b
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3852,11 +4097,11 @@ h_E9:
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -3895,17 +4140,26 @@ h_EC:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g170
+	jr nc,g192
 	ld a,(hl)
-	jr g171
-g170:
+	jr g193
+g192:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g194
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g193
+g194:
 	call rd_hi
-g171:
+g193:
 	ld l,a
 	ld a,b
 	sub l
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	ccf
 	sbc a,a
 	ld (RV_C),a
@@ -3927,21 +4181,30 @@ h_ED:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g172
+	jr nc,g195
 	ld a,(hl)
-	jr g173
-g172:
+	jr g196
+g195:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g197
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g196
+g197:
 	call rd_hi
-g173:
+g196:
 	ld l,a
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -3970,24 +4233,24 @@ h_EE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g174
+	jr nc,g198
 	ld a,(hl)
 	push hl
 	inc a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g175
-g174:
+	jr g199
+g198:
 	call rd_hi
 	push hl
 	inc a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g175:
+g199:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -3998,9 +4261,9 @@ g175:
 	ld l,a
 	jp (hl)
 h_F0:
-	ld a,(RV_Z)
+	db $DD,$7D
 	or a
-	jr nz,g178
+	jr nz,g202
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4021,7 +4284,7 @@ h_F0:
 	ld h,(hl)
 	ld l,a
 	jp (hl)
-g178:
+g202:
 	inc de
 	ld a,(de)
 	inc de
@@ -4046,21 +4309,30 @@ h_F1:
 	inc h
 	ld a,h
 	cp $40
-	jr nc,g179
+	jr nc,g203
 	ld a,(hl)
-	jr g180
-g179:
+	jr g204
+g203:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g205
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g204
+g205:
 	call rd_hi
-g180:
+g204:
 	ld l,a
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -4091,11 +4363,11 @@ h_F5:
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -4124,20 +4396,10 @@ h_F6:
 	ld a,(hl)
 	push hl
 	inc a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
-	ld (RV_T),a
-	ld a,l
-	cp 1
-	ld a,(RV_T)
-	jr z,g181
 	ld (hl),a
-	jr g182
-g181:
-	call port_wr
-	ld (hl),a
-g182:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4170,21 +4432,30 @@ h_F9:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g183
+	jr nc,g206
 	ld a,(hl)
-	jr g184
-g183:
+	jr g207
+g206:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g208
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g207
+g208:
 	call rd_hi
-g184:
+g207:
 	ld l,a
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -4215,21 +4486,30 @@ h_FD:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g185
+	jr nc,g209
 	ld a,(hl)
-	jr g186
-g185:
+	jr g210
+g209:
+	ld a,(RV_CODEHI)
+	xor h
+	and $C0
+	jr nz,g211
+	set 7,h
+	res 6,h
+	ld a,(hl)
+	jr g210
+g211:
 	call rd_hi
-g186:
+g210:
 	ld l,a
 	ld a,(RV_C)
 	cpl
 	rra
-	ld a,(RV_A)
+	db $FD,$7D
 	sbc a,l
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F
+	db $DD,$67
+	db $DD,$6F
 	push af
 	pop hl
 	ld a,l
@@ -4260,24 +4540,24 @@ h_FE:
 	ld h,a
 	ld a,h
 	cp $40
-	jr nc,g187
+	jr nc,g212
 	ld a,(hl)
 	push hl
 	inc a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	ld (hl),a
-	jr g188
-g187:
+	jr g213
+g212:
 	call rd_hi
 	push hl
 	inc a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $DD,$67
+	db $DD,$6F
 	pop hl
 	call wr_hi
-g188:
+g213:
 	ld a,(de)
 	inc de
 	ld l,a
@@ -4307,7 +4587,7 @@ optab_lo:
 	db emu_bad & 255
 	db h_10 & 255
 	db h_11 & 255
-	db emu_bad & 255
+	db h_mul & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_15 & 255
@@ -4339,7 +4619,7 @@ optab_lo:
 	db emu_bad & 255
 	db h_30 & 255
 	db h_31 & 255
-	db emu_bad & 255
+	db h_sidcopy & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_35 & 255
@@ -4355,7 +4635,7 @@ optab_lo:
 	db emu_bad & 255
 	db h_40 & 255
 	db h_41 & 255
-	db emu_bad & 255
+	db h_sprregs & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_45 & 255
@@ -4564,7 +4844,7 @@ optab_hi:
 	db emu_bad / 256
 	db h_10 / 256
 	db h_11 / 256
-	db emu_bad / 256
+	db h_mul / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_15 / 256
@@ -4596,7 +4876,7 @@ optab_hi:
 	db emu_bad / 256
 	db h_30 / 256
 	db h_31 / 256
-	db emu_bad / 256
+	db h_sidcopy / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_35 / 256
@@ -4612,7 +4892,7 @@ optab_hi:
 	db emu_bad / 256
 	db h_40 / 256
 	db h_41 / 256
-	db emu_bad / 256
+	db h_sprregs / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_45 / 256

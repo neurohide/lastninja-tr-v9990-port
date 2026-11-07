@@ -1028,6 +1028,32 @@ sdc_wide:
 ; ---- C64 joystick port 2 from MSX joystick 1 + cursor keys/space ----------
 ; out: A = C64 $DC00 bits, active low: b0 up b1 down b2 left b3 right b4 fire
 joy_read:
+	if AUTOWALK		; benchmark: hold right from frame 100 to 599
+	push hl
+	ld hl,(RV_FRAMES)
+	ld a,h
+	or a
+	jr nz,aw_hi
+	ld a,l
+	cp 100
+	jr c,aw_off
+	jr aw_on
+aw_hi:
+	ld a,h
+	cp 2
+	jr nc,aw_off
+	ld a,l
+	cp 600-512
+	jr nc,aw_off
+aw_on:
+	pop hl
+	ld a,$F7		; right
+	ret
+aw_off:
+	pop hl
+	ld a,$FF
+	ret
+	endif
 	push bc
 	ld a,15
 	out ($A0),a

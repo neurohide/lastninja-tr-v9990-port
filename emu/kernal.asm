@@ -78,7 +78,7 @@ k_ok:
 	ld (RV_C),a
 	ret
 k_err:				; A = KERNAL error code, carry set
-	ld (RV_A),a
+	db $FD,$6F		; ld iyl,a (6502 A)
 	ld a,$FF
 	ld (RV_C),a
 	ret
@@ -91,7 +91,7 @@ k_setlfs:
 	jr k_ok
 
 k_setnam:			; A = length, X/Y = name
-	ld a,(RV_A)
+	db $FD,$7D		; ld a,iyl (6502 A)
 	cp 16
 	jr c,ksn_len
 	ld a,15
@@ -128,23 +128,23 @@ k_chrin:
 	jr nc,kc_ok
 	xor a
 kc_ok:
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F		; ld iyl,a (6502 A)
+	db $DD,$67		; ld ixh,a (N source)
+	db $DD,$6F		; ld ixl,a (Z source)
 	jr k_ok
 
 k_readst:
 	ld a,($0090)		; ST (6502 page 0 is Z80 page 0)
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F		; ld iyl,a (6502 A)
+	db $DD,$67		; ld ixh,a (N source)
+	db $DD,$6F		; ld ixl,a (Z source)
 	jr k_ok
 
 k_getin:
 	xor a
-	ld (RV_A),a
-	ld (RV_N),a
-	ld (RV_Z),a
+	db $FD,$6F		; ld iyl,a (6502 A)
+	db $DD,$67		; ld ixh,a (N source)
+	db $DD,$6F		; ld ixl,a (Z source)
 	jr k_ok
 
 ; LOAD: A = 0 (load), X/Y = address if the secondary address is 0

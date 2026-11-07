@@ -79,3 +79,12 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - SID -> PSG adapted from buggyboymsx (`sound_frame`, `sid_period`, `sid_envelope`): 3 voices square or noise, software ADSR per frame, master volume $D418; no filter, no ring/sync, pulse width ignored.
 - io_wr mirrors SID every 32 bytes and calls `sid_gate` on control writes (old vs new gate bit) so attack/release start at write time; `sound_update` runs at every emulated frame end.
 - Check: 10 s recording in game (`record start -audioonly`) has continuous signal; voice 0 SID freq $433A (~1011 Hz) -> PSG period $06E (~1017 Hz).
+
+## Speed pass 2 (music slowed down while walking)
+- Cause: walking pushed emulation to ~31 emulated frames/s; the music runs from the emulated CIA timer IRQ, so its tempo dropped. Throttle also had a 16-bit wrap bug (fixed in frame_sync).
+- Benchmark: `emu/bench.sh` (AUTOWALK build: joystick right from frame 100 to 599, no throttle) prints host seconds per 100 emulated frames; 2.0 s = real time. Walking went 3.2 s -> 1.9 s.
+- Changes: CPU port read lazily from $0001 (no check on zp stores); same-16K-segment inline fast path for abs/indexed loads/stores (RV_CODEHI; not in segment 7); 6502 A in IYl, N/Z sources in IXh/IXl (raw db bytes: z80asm mis-encodes IX/IY halves); faster io_wr dispatch; SLICE 8.
+- Native game routines (illegal opcodes patched in by embuild.py PATCHES): $12 8x8 multiply ($687E), $32 music SID register copy ($B00B), $42 IRQ sprite register update ($5690). `NOHLE=1` builds without them.
+- Check: `STOPFRAME=700` freezes the machine at that emulated frame; AUTOWALK snapshots with and without the native routines are identical except the patched bytes, stack, and the frame counter $1B (timing differs by 8 ticks).
+- Result with throttle: 50 frames/s while walking (late counter 3, all at start).
+- `emu/prof.sh N` now also prints time per component (core, memory/io, video, scheduler, sound).

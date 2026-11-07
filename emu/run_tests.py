@@ -23,8 +23,9 @@ def gen_prog(rnd, n):
 def run(seed, n=150, full=150):
     rnd = random.Random(seed)
     prog = gen_prog(rnd, full); regs = [rnd.randrange(256) for _ in range(3)] + [rnd.randrange(256) & 0xCF | 0x20]
-    mem0 = bytearray(65536); mem0[0x200:0x200 + len(prog)] = prog
-    sym = dict(START_PC=0x200, START_PORT=0x37, ST_A=regs[0], ST_X=regs[1], ST_Y=regs[2], ST_S=0xFF,
+    org = 0x4200 if seed & 1 else 0x200      # odd seeds: code in segment 5 (window fast path)
+    mem0 = bytearray(65536); mem0[org:org + len(prog)] = prog
+    sym = dict(START_PC=org, START_PORT=0x37, ST_A=regs[0], ST_X=regs[1], ST_Y=regs[2], ST_S=0xFF,
                ST_P=regs[3], ST_CMP=0, ST_IMR=0, ST_MASK=0, ST_CRA=0, ST_TLAT=0, ST_TCNT=0, ST_N=n)
     build(sym, mem0, bytes(4096), os.path.join(HERE, 't.rom'), test=True)
     open(os.path.join(HERE, 'dump.tcl'), 'w').write('''
@@ -36,6 +37,7 @@ after time 12 {
  puts $f $s
  set s ""
  for {set i 0} {$i < 0x400} {incr i} { append s [format "%%02X" [debug read "Main RAM" [expr {4*16384 + $i}]]] }
+ for {set i 0} {$i < 0x400} {incr i} { append s [format "%%02X" [debug read "Main RAM" [expr {5*16384 + $i}]]] }
  puts $f $s
  close $f
  exit
@@ -45,19 +47,20 @@ after time 12 {
                     '-script', os.path.join(HERE, 'dump.tcl')], capture_output=True, timeout=120)
     lines = open(os.path.join(HERE, 'dump.txt')).read().split('\n')
     z = [int(x, 16) for x in lines[0].split()]; zmem = bytes.fromhex(lines[1])
-    mem = bytearray(65536); mem[0x200:0x200 + len(prog)] = prog
-    c = CPU(mem, 0x200, *regs)
+    mem = bytearray(65536); mem[org:org + len(prog)] = prog
+    c = CPU(mem, org, *regs)
     try:
         for _ in range(n): c.step()
     except KeyError:
         print('seed', seed, 'skipped (self-overwrite hit an illegal opcode)'); return True
     exp = [c.a, c.x, c.y, c.sp, c.P() & 0xCF, c.pc & 255, c.pc >> 8]
     got = [z[0], z[1], z[2], z[3], z[6] & 0xCF, z[8], z[9]]
-    ok = exp == got and bytes(mem[:0x400]) == zmem
+    ok = exp == got and bytes(mem[:0x400]) + bytes(mem[0x4000:0x4400]) == zmem
     if not ok:
         print('seed', seed, 'FAIL\n exp', [None if v is None else '%02X' % v for v in exp], '\n got', [None if v is None else '%02X' % v for v in got])
-        diff = [i for i in range(0x400) if mem[i] != zmem[i]][:8]
-        print(' mem diffs', [(hex(i), mem[i], zmem[i]) for i in diff])
+        ref = bytes(mem[:0x400]) + bytes(mem[0x4000:0x4400])
+        diff = [i for i in range(0x800) if ref[i] != zmem[i]][:8]
+        print(' mem diffs', [(hex(i if i < 0x400 else i + 0x3C00), ref[i], zmem[i]) for i in diff])
     return ok
 
 

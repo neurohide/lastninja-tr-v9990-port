@@ -22,7 +22,7 @@ CHGCPU:		equ $0180
 RSLREG:		equ $0138
 EXPTBL:		equ $FCC1
 ASCII16_P1:	equ $6000
-SLICE:		equ 4
+SLICE:		equ 8
 LINES:		equ 312
 CYC_LINE:	equ 63
 
@@ -66,6 +66,7 @@ rd_lastbg:	equ RV+48
 RV_TLATL:	equ RV+50	; 2 timer A reload in raster lines
 RV_DEADLINE:	equ RV+52	; 2 system timer value of the next frame start
 RV_LATE:	equ RV+54	; 2 frames we were late (debug)
+RV_CODEHI:	equ RV+56	; bits 7-6 of code addresses for the inline fast path ($00 in segment 7)
 TICKS_FRAME:	equ 5114		; 20 ms in 3.911 us system timer ticks
 BOOTRT:		equ $C100
 DOSRT:		equ $C800		; DOS bridge (copied to page 3)
@@ -253,9 +254,13 @@ dos_rt:
 	ld a,(k_p2seg)
 	out (PORT_P2),a
 	pop hl
+	push ix
+	push iy
 	ei
 	call BDOS
 	di
+	pop iy
+	pop ix
 	push af
 	push hl
 	in a,($A8)
@@ -296,7 +301,7 @@ in_clr:
 	ld a,ST_S
 	ld (RV_S),a
 	ld a,ST_A
-	ld (RV_A),a
+	db $FD,$6F		; ld iyl,a (6502 A)
 	ld a,ST_P
 	call unpack_p
 	ld hl,ST_CMP
@@ -328,6 +333,8 @@ in_clr:
 	call sys_timer
 	ld (RV_DEADLINE),hl
 	endif
+	xor a
+	ld (RV_CODEHI),a
 	ld hl,START_PC
 	call setpc
 	ld b,ST_X
@@ -349,8 +356,7 @@ sp_hi:
 	if TRAPS
 	cp $E0
 	jr c,sp_ram
-	ld a,(RV_KERN)
-	or a
+	call port_kern
 	jp nz,kernal_trap
 	ld a,h
 sp_ram:
@@ -361,6 +367,13 @@ sp_ram:
 	add a,SEG0
 	ld (RV_CODESEG),a
 	out (PORT_P2),a
+	cp SEG0+3		; segment 7 holds I/O, screen, sprites: no fast path
+	ld a,h
+	jr nz,sp_fast
+	xor a
+sp_fast:
+	and $C0
+	ld (RV_CODEHI),a
 	ld a,h
 	and $3F
 	or $80
@@ -398,8 +411,7 @@ rd_hi:
 	jr c,rh_ram
 	cp $E0
 	jr nc,rh_ram
-	ld a,(RV_IO)
-	or a
+	call port_io
 	jr z,rh_ram
 	call io_rd
 	jr rh_back
@@ -411,6 +423,11 @@ rh_ram:
 	rlca
 	and 3
 	add a,SEG0
+	ld hl,RV_CODESEG	; same segment as the code: no re-mapping
+	cp (hl)
+	pop hl
+	jr z,rh_same
+	push hl
 	out (PORT_P2),a
 	ld a,h
 	and $3F
@@ -424,6 +441,15 @@ rh_back:
 	out (PORT_P2),a
 	pop af
 	ret
+rh_same:
+	push hl
+	ld a,h
+	and $3F
+	or $80
+	ld h,a
+	ld a,(hl)
+	pop hl
+	ret
 
 wr_hi:
 	ld (RV_T),a
@@ -433,8 +459,7 @@ wr_hi:
 	jr c,wh_ram
 	cp $E0
 	jr nc,wh_ram
-	ld a,(RV_IO)
-	or a
+	call port_io
 	jr z,wh_ram
 	ld a,(RV_T)
 	call io_wr
@@ -466,6 +491,11 @@ wh_nod:
 	rlca
 	and 3
 	add a,SEG0
+	ld hl,RV_CODESEG
+	cp (hl)
+	pop hl
+	push hl
+	jr z,wh_same
 	out (PORT_P2),a
 	ld a,h
 	and $3F
@@ -478,6 +508,15 @@ wh_back:
 	ld a,(RV_CODESEG)
 	out (PORT_P2),a
 	ld a,(RV_T)
+	ret
+wh_same:
+	ld a,h
+	and $3F
+	or $80
+	ld h,a
+	ld a,(RV_T)
+	ld (hl),a
+	pop hl
 	ret
 
 rd_any:				; HL -> A, any address
@@ -492,7 +531,7 @@ pack_p:				; -> A (bit 4 and 5 clear)
 	ld a,(RV_P)
 	and $0C
 	ld l,a
-	ld a,(RV_N)
+	db $DD,$7C		; ld a,ixh (N source)
 	and $80
 	or l
 	ld l,a
@@ -501,7 +540,7 @@ pack_p:				; -> A (bit 4 and 5 clear)
 	jr z,pp_v
 	set 6,l
 pp_v:
-	ld a,(RV_Z)
+	db $DD,$7D		; ld a,ixl (Z source)
 	or a
 	jr nz,pp_z
 	set 1,l
@@ -524,11 +563,24 @@ unpack_p:			; A = P
 	ld (RV_C),a
 	ld a,l
 	and $80
-	ld (RV_N),a
+	db $DD,$67		; ld ixh,a (N source)
 	ld a,l
 	and 2
 	xor 2
-	ld (RV_Z),a
+	db $DD,$6F		; ld ixl,a (Z source)
+	ret
+
+; ---- CPU port: the 6502 writes $0001 as plain RAM (page 0); the memory map
+; is worked out from it only where it matters.  Use A only.
+port_io:			; NZ if I/O is visible at $D000
+	ld a,($0001)
+	bit 2,a
+	ret z
+	and 3
+	ret
+port_kern:			; NZ if the KERNAL is visible at $E000
+	ld a,($0001)
+	and 2
 	ret
 
 ; ---- CPU port ($0001) write: A = value, keeps all but F -------------------
@@ -656,50 +708,61 @@ io_wr:
 	push hl
 	push bc
 	ld c,a
+	ld a,SEG_IO		; (the caller re-maps the code segment)
+	out (PORT_P2),a
 	ld a,h
 	cp $D4
-	jr nc,iw_notvic
+	jr c,iw_vicw
+	cp $D8
+	jr c,iw_sidw
+	cp $DC
+	jr c,iw_colw
+	ld b,a			; $DC00-$DFFF: CIA1, CIA2, expansion
+	and $0F
+	or $80
+	ld h,a
+	ld (hl),c
+	ld a,b
+	cp $DC
+	jp z,iw_cia1
+	jr iw_done
+iw_vicw:			; VIC: mirror every 64 bytes
 	ld a,l
 	and $3F
 	ld l,a
-	ld h,$D0
-iw_notvic:
-	ld a,h
-	cp $D4
-	jr c,iw_notsid
-	cp $D8
-	jr nc,iw_notsid
-	ld a,l			; SID: mirror every 32 bytes, gate transitions
+	ld h,$80
+	ld (hl),c
+	jr iw_vic
+iw_sidw:			; SID: mirror every 32 bytes, gate transitions
+	ld a,l
 	and $1F
 	ld l,a
-	ld h,$D4
-	push hl
-	call io_map
+	ld h,$84
+	cp 4
+	jr z,iw_gate
+	cp 11
+	jr z,iw_gate
+	cp 18
+	jr z,iw_gate
+	ld (hl),c
+	jr iw_done
+iw_gate:
 	ld b,(hl)		; old value
-	pop hl
+	ld (hl),c
 	call sid_gate
-iw_notsid:
+	jr iw_done
+iw_colw:			; colour RAM: dirty page flags $18-$1B
 	push hl
-	ld a,h
-	cp $D8
-	jr c,iw_nod
-	cp $DC
-	jr nc,iw_nod
-	sub $C0			; colour RAM page -> dirty flags $18-$1B
+	sub $C0
 	ld l,a
 	ld h,DIRTY/256
 	ld (hl),1
 	pop hl
-	push hl
-iw_nod:
-	call io_map
-	ld (hl),c
-	pop hl
 	ld a,h
-	cp $D0
-	jr z,iw_vic
-	cp $DC
-	jr z,iw_cia1
+	and $0F
+	or $80
+	ld h,a
+	ld (hl),c
 iw_done:
 	ld a,c
 	pop bc
@@ -859,6 +922,8 @@ vil_clr:
 ; ---- scheduler: the core jumps here when RV_CNT reaches 0 ------------------
 	if TEST
 emu_done:			; store the 6502 state and stop
+	db $FD,$7D		; ld a,iyl (6502 A)
+	ld (RV),a		; -> RV_A in memory for the test reader
 	ld a,b
 	ld (RV_X),a
 	ld a,c
@@ -882,7 +947,7 @@ emu_done:
 ; $02 = "beq to an idle loop" (patched into the game): if the branch is taken,
 ; fast-forward raster lines until an interrupt is taken (or a frame passed).
 h_idle:
-	ld a,(RV_Z)
+	db $DD,$7D		; ld a,ixl (Z source)
 	or a
 	jr z,hi_taken
 	inc de
@@ -973,11 +1038,242 @@ hi_out:
 	ld (RV_CNT),a
 	jp core_dispatch
 
+; $12 = native version of the game's 8x8 multiply at $687E (patched in):
+; X*Y -> X (low), Y (high), with the routine's side effects: $45 = 0,
+; $46/$47 = Y << k (k = loop count), A = 0, Z set, C = last bit out.
+; shortcut: V is left unchanged (the 6502 loop's adc leaves it undefined-ish).
+h_mul:
+	push de
+	ld e,c
+	ld d,0
+	ld hl,0
+hm_loop:
+	srl b
+	jr nc,hm_skip
+	add hl,de
+hm_skip:
+	sla e
+	rl d
+	ld a,0
+	adc a,a
+	ld (RV_T),a
+	inc b
+	dec b
+	jr nz,hm_loop
+	ld ($0046),de
+	xor a
+	ld ($0045),a
+	db $FD,$6F		; ld iyl,a (6502 A)
+	db $DD,$67		; ld ixh,a (N source)
+	db $DD,$6F		; ld ixl,a (Z source)
+	ld a,(RV_T)
+	neg
+	ld (RV_C),a
+	ld b,l
+	ld c,h
+	pop de
+	call kt_rts		; RTS
+	jp core_dispatch
+
+; $32 = native version of the music player's SID update at $B00B:
+;   ldx #$18 / loop: lda $B70C,x / sta $D400,x / dex / bpl loop  (then rts at $B016)
+; Copies the 25 bytes into the SID shadow (gate tracking) or into RAM when
+; I/O is not mapped; leaves X = $FF, A = $B70C, N set, Z clear.
+SIDBUF:		equ $C6F0		; 25 bytes
+h_sidcopy:
+	push bc
+	ld a,SEG0+2		; $B70C is in segment 6 (window address = 6502 address)
+	out (PORT_P2),a
+	ld hl,$B70C
+	ld de,SIDBUF
+	ld bc,25
+	ldir
+	call port_io
+	jr nz,hsc_io
+	ld a,SEG0+3		; RAM under I/O: $D400 -> window $9400
+	out (PORT_P2),a
+	ld hl,SIDBUF
+	ld de,$9400
+	ld bc,25
+	ldir
+	jr hsc_done
+hsc_io:
+	ld a,SEG_IO
+	out (PORT_P2),a
+	ld de,SIDBUF
+	ld hl,$8400		; SID shadow
+hsc_loop:
+	ld a,(de)
+	ld c,a			; new
+	ld a,l
+	cp 4
+	jr z,hsc_gate
+	cp 11
+	jr z,hsc_gate
+	cp 18
+	jr nz,hsc_st
+hsc_gate:
+	ld b,(hl)		; old
+	call sid_gate
+hsc_st:
+	ld (hl),c
+	inc hl
+	inc de
+	ld a,l
+	cp 25
+	jr nz,hsc_loop
+hsc_done:
+	pop bc
+	ld b,$FF		; X
+	ld a,(SIDBUF)
+	db $FD,$6F		; ld iyl,a (A)
+	ld a,$FF
+	db $DD,$67		; ld ixh,a (N)
+	db $DD,$6F		; ld ixl,a (Z clear)
+	ld hl,$B016
+	call setpc
+	jp core_dispatch
+
+; $42 = native version of the IRQ's sprite register update at $5690-$56F6
+; (patched in; ends with the routine's rts).  For sprite y = 0..7, table
+; index x = (x0 + y) & 7 with x0 = ($02A8 & 4) ^ 4:
+;   $D027+y = $0250,x   $C3F8+y = $0258,x   $0218,x &= $FD
+;   $D000+2y = $0240,x  $D001+2y = $0248,x
+;   bits of $0250,x: 7 -> $16 (X expand), 6 -> $17 (Y expand), 5 -> $18 (MC),
+;   4 -> $19 (X MSB); $0248,x >= 1 -> $1A (enable)
+; then $D01D=$16, $D017=$17, $D01C=$18, $D015=$1A, $D010=$19.
+; Exit: A = $19, X = x0, Y = 8, C set, N/Z from A.
+h_sprregs:
+	push de
+	ld a,($02A8)
+	and 4
+	xor 4
+	ld (RV_T),a		; x0
+	; VIC registers go to the I/O shadow, or to RAM when I/O is not mapped
+	call port_io
+	ld a,SEG_IO
+	ld d,$80
+	jr nz,hsr_seg
+	ld a,SEG0+3
+	ld d,$90
+hsr_seg:
+	out (PORT_P2),a
+	ld c,0			; y
+hsr_loop:
+	ld a,(RV_T)
+	add a,c
+	and 7
+	add a,$18
+	ld l,a
+	ld h,$02		; $0218 + x
+	ld a,(hl)
+	and $FD
+	ld (hl),a
+	ld a,(RV_T)
+	add a,c
+	and 7
+	or $50
+	ld l,a			; $0250 + x: colour/flags
+	ld a,(hl)
+	ld b,a
+	ld e,c			; VIC $D027+y
+	ld a,$27
+	add a,e
+	ld e,a
+	ld a,b
+	ld (de),a
+	rla			; bit 7 -> $16
+	ld hl,$0016
+	rr (hl)
+	rla			; bit 6 -> $17
+	inc l
+	rr (hl)
+	rla			; bit 5 -> $18
+	inc l
+	rr (hl)
+	rla			; bit 4 -> $19
+	inc l
+	rr (hl)
+	ld a,(RV_T)
+	add a,c
+	and 7
+	or $40
+	ld l,a
+	ld h,$02		; $0240 + x: X
+	ld a,c
+	add a,a
+	ld e,a			; VIC $D000+2y
+	ld a,(hl)
+	ld (de),a
+	set 3,l			; $0248 + x: Y
+	inc e
+	ld a,(hl)
+	ld (de),a
+	cp 1			; carry clear if Y >= 1 ... 6502 cmp sets C = (Y >= 1)
+	ccf
+	ld hl,$001A
+	rr (hl)
+	inc c
+	ld a,c
+	cp 8
+	jr nz,hsr_loop
+	ld e,$1D
+	ld a,($0016)
+	ld (de),a
+	ld e,$17
+	ld a,($0017)
+	ld (de),a
+	ld e,$1C
+	ld a,($0018)
+	ld (de),a
+	ld e,$15
+	ld a,($001A)
+	ld (de),a
+	ld e,$10
+	ld a,($0019)
+	ld (de),a
+	; sprite pointers $C3F8+y in RAM (segment 7, window $83F8)
+	ld a,SEG0+3
+	out (PORT_P2),a
+	ld c,0
+hsr_ptr:
+	ld a,(RV_T)
+	add a,c
+	and 7
+	or $58
+	ld l,a
+	ld h,$02		; $0258 + x
+	ld a,(hl)
+	ld hl,$83F8
+	ld b,0
+	add hl,bc
+	ld (hl),a
+	inc c
+	ld a,c
+	cp 8
+	jr nz,hsr_ptr
+	ld a,(RV_CODESEG)
+	out (PORT_P2),a
+	pop de
+	ld a,(RV_T)
+	ld b,a			; X = x0
+	ld c,8			; Y
+	ld a,$FF
+	ld (RV_C),a
+	ld a,($0019)
+	db $FD,$6F		; ld iyl,a
+	db $DD,$67		; ld ixh,a
+	db $DD,$6F		; ld ixl,a
+	call kt_rts		; rts
+	jp core_dispatch
+
 ; advance one raster line: render at frame end, raster compare, CIA timer.
 ; Keeps BC, DE; re-maps the code segment.
 sched_line:
 	push bc
 	push de
+	push ix			; (IX/IY hold 6502 flags/A; render and sound use IX)
+	push iy
 	ld hl,(RV_LINE)
 	inc hl
 	ld bc,LINES
@@ -987,6 +1283,18 @@ sched_line:
 	ld hl,(RV_FRAMES)
 	inc hl
 	ld (RV_FRAMES),hl
+	if STOPFRAME
+	push de
+	ld de,STOPFRAME
+	or a
+	sbc hl,de
+	add hl,de
+	pop de
+	jr nz,sc_nostop
+sc_stop:
+	jr sc_stop		; check build: freeze the machine at frame STOPFRAME
+sc_nostop:
+	endif
 	ld a,l
 	and RENDER_EVERY-1
 	call z,render
@@ -1033,6 +1341,8 @@ sc_tset:
 sc_notimer:
 	ld a,(RV_CODESEG)
 	out (PORT_P2),a
+	pop iy
+	pop ix
 	pop de
 	pop bc
 	ret
@@ -1043,9 +1353,12 @@ frame_sync:
 	call sys_timer
 	ld de,(RV_DEADLINE)
 	or a
-	sbc hl,de		; now - deadline
-	bit 7,h
-	jr z,fs_late_chk	; already past the deadline
+	sbc hl,de		; d = now - deadline (16 bit, wraps every 256 ms)
+	ld bc,2*TICKS_FRAME
+	add hl,bc		; d + 2 frames < 2 frames: up to 2 frames early -> wait
+	or a
+	sbc hl,bc
+	jr nc,fs_late		; (carry: d + 2F < 2F unsigned)
 fs_wait:
 	call sys_timer
 	or a
@@ -1053,11 +1366,14 @@ fs_wait:
 	bit 7,h
 	jr nz,fs_wait
 	jr fs_next
-fs_late_chk:
+fs_late:			; HL = d + 2F - 2F... recompute d
+	call sys_timer
+	or a
+	sbc hl,de
 	ld bc,2*TICKS_FRAME
 	or a
 	sbc hl,bc
-	jr c,fs_next
+	jr c,fs_next		; less than 2 frames late: keep the schedule
 	ld hl,(RV_LATE)
 	inc hl
 	ld (RV_LATE),hl
@@ -1112,11 +1428,10 @@ take_irq:
 	ld (RV_S),hl
 	ld hl,RV_P
 	set 2,(hl)
-	ld a,(RV_KERN)
-	or a
+	call port_kern
 	jr z,ti_hw
 	ld hl,(RV_S)		; KERNAL $FF48: pha / txa / pha / tya / pha
-	ld a,(RV_A)
+	db $FD,$7D		; ld a,iyl (6502 A)
 	ld (hl),a
 	dec l
 	ld (hl),b

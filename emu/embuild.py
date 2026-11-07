@@ -9,7 +9,7 @@ ROOT = os.path.dirname(HERE)
 def build(sym, ram, io, out, test=False):
     subprocess.run([sys.executable, os.path.join(HERE, 'gen6502.py'), '1' if test else '0'], check=True,
                    stdout=subprocess.DEVNULL)
-    sym = dict(sym, TEST=int(test), TRAPS=int(not test), RENDER_EVERY=2, THROTTLE=int(os.environ.get('THROTTLE', '1')),
+    sym = dict(sym, TEST=int(test), TRAPS=int(not test), RENDER_EVERY=2, THROTTLE=int(os.environ.get('THROTTLE', '1')), AUTOWALK=int(os.environ.get('AUTOWALK', '0')), STOPFRAME=int(os.environ.get('STOPFRAME', '0')),
                RENDER_TEST=int(os.environ.get('RENDER_TEST', '0')))
     open(os.path.join(HERE, 'state.inc'), 'w').write(''.join('%s:\tequ $%04X\n' % kv for kv in sym.items()))
     r = subprocess.run(['z80asm', '-o', 'machine.bin', '-Lmachine.lbl', 'machine.asm'], cwd=HERE,
@@ -24,7 +24,10 @@ def build(sym, ram, io, out, test=False):
 
 
 # address -> (original, new).  $02 = beq that fast-forwards to the next IRQ.
-PATCHES = {0xBD19: (0xF0, 0x02)}   # main loop: wait for $1B (frame counter) to change
+PATCHES = {0xBD19: (0xF0, 0x02),   # main loop: wait for $1B (frame counter) to change
+           0x687E: (0x86, 0x12),   # 8x8 multiply -> native
+           0xB00B: (0xA2, 0x32),   # music player SID register copy -> native
+           0x5690: (0xA0, 0x42)}   # IRQ sprite register update -> native
 
 
 def game():
@@ -34,7 +37,10 @@ def game():
                ST_P=h('p'), ST_CMP=st['raster_cmp'], ST_IMR=h('imr'), ST_MASK=h('cia1_mask'),
                ST_CRA=h('cia1_cra'), ST_TLAT=h('cia1_latch'), ST_TCNT=h('cia1_count'), ST_N=0)
     ram = bytearray(open(os.path.join(ROOT, 'dumps', 'state_ram.mem'), 'rb').read())
+    nohle = os.environ.get('NOHLE')
     for a, (old, new) in PATCHES.items():
+        if nohle and new != 0x02:
+            continue
         assert ram[a] == old, 'patch %04X: %02X' % (a, ram[a])
         ram[a] = new
     io = open(os.path.join(ROOT, 'dumps', 'state_io.mem'), 'rb').read()
