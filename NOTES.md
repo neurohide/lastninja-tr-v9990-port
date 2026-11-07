@@ -57,3 +57,10 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - Dirty pages: writes to VIC bank 3 ($C000-$FFFF, except sprite pointers $C3F8-$C3FF) and colour RAM mark 256-byte pages; renderer redraws only touched character rows.
 - Result: ~1.3 -> ~55 emulated frames/s; now throttled to 50 Hz on the turbo R system timer (`frame_sync`, THROTTLE=0 to disable). `emu/prof.sh N` = PC profile (6502 + Z80 routines).
 - Not yet known: frame rate in busy scenes (fights, many enemies), since there is no input test yet.
+
+## Sprites (emu/video.asm)
+- Screen now B3 8 bpp: palette 0-15 background, 16-31 sprite copies (so black sprite pixels are not blitter-transparent). Background rendered into a clean copy at VRAM y 256, changed rows blitted to the display (y 0).
+- Per render: old sprite boxes restored from the clean copy (LMMM), sprites 7..0 drawn as LMMM with transparency from a VRAM sprite cache (64 slots of 72x42 at y 512+, key = pointer/flags/colours, re-decoded when its data page was written: SDIRTY flags set by wr_hi).
+- MC/hires, X/Y expand, clipping to the 480x200 window. Not done: sprite-background priority ($D01B), collisions, multiplexing.
+- Verified: ninja drawn and walks with cursor keys; 50 frames/s with input.
+- Open question: POWER/WEAPONRY panels empty in both our render and the reference render of the dump; compare with a VICE screenshot.

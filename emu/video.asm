@@ -40,6 +40,13 @@ sp_cy0:		equ $C696		; 2 first visible line
 sp_ch:		equ $C698		; 2 visible height
 sp_row:		equ $C69A		; source row counter
 sp_ymul:	equ $C69B		; 1 or 2 (Y expand)
+SCACHE:		equ $C700		; 64 slots x 4 key bytes (ptr, flags, colour, mc0|mc1)
+SCACHE_Y:	equ 512			; VRAM y of slot row 0 (7 slots of 72 x 42 per row)
+sp_key:		equ $C6B0		; 4 key bytes of the current sprite
+sp_slot:	equ $C6B4		; slot index
+sp_sx:		equ $C6B6		; 2 slot x in VRAM
+sp_sy:		equ $C6B8		; 2 slot y in VRAM
+SDIRTY:		equ DIRTY+64		; pages of $C000-$FFFF written since sprites were drawn
 WIN_X0:		equ VID_X
 WIN_X1:		equ VID_X+480
 WIN_Y0:		equ VID_Y
@@ -100,6 +107,15 @@ vi_ob:
 	ld (hl),0
 	inc hl
 	djnz vi_ob
+	ld hl,SCACHE		; empty sprite cache
+	ld bc,256
+vi_sc:
+	ld (hl),$FF
+	inc hl
+	dec bc
+	ld a,b
+	or c
+	jr nz,vi_sc
 	ret
 v_regs:
 	db 6, $96		; B3: bitmap, 512 px, 8 bpp
@@ -180,6 +196,12 @@ render:
 	call bg_rows
 	call spr_erase
 	call spr_draw
+	ld hl,SDIRTY
+	ld b,64
+rn_sd:
+	ld (hl),0
+	inc hl
+	djnz rn_sd
 	pop de
 	ret
 
@@ -681,17 +703,151 @@ so_h:
 	ld de,$8000
 	add hl,de
 	ld (sp_data),hl
-	; LMMC with transparency
+	call spr_cache		; shape in a VRAM slot (decoded if needed)
+	ld hl,(sp_sx)		; LMMM slot -> screen, colour 0 transparent
+	ld de,(sp_cx0)
+	add hl,de
+	ld (BLT+0),hl
+	ld hl,(sp_sy)
+	ld de,(sp_cy0)
+	add hl,de
+	ld (BLT+2),hl
 	call v_wait
-	ld a,36
+	ld a,32
 	out (V_SEL),a
-	ld hl,BLT+4
-	ld bc,8*256+V_REG
-	otir			; DX, DY, NX, NY
+	ld hl,BLT
+	ld bc,12*256+V_REG
+	otir
 	xor a
 	out (V_REG),a		; ARG
 	ld a,$1C
-	out (V_REG),a		; LOP: copy, colour 0 transparent
+	out (V_REG),a		; LOP: copy, transparent
+	ld a,$FF
+	out (V_REG),a
+	out (V_REG),a		; WM
+	xor a
+	out (V_REG),a
+	out (V_REG),a		; FC
+	out (V_REG),a
+	out (V_REG),a		; BC
+	ld a,$40
+	out (V_REG),a		; CMD: LMMM
+	ret
+
+; find or fill the cache slot of the current sprite -> sp_sx, sp_sy.
+; key = pointer, flags, colour, mc0<<4|mc1; slot = (pointer + colour*8) & 63.
+spr_cache:
+	ld a,(sp_n)
+	ld e,a
+	ld d,0
+	ld hl,$83F8		; (SEG0+3 is mapped)
+	add hl,de
+	ld a,(hl)
+	ld (sp_key),a
+	ld b,a
+	ld a,(sp_flags)
+	ld (sp_key+1),a
+	ld a,(sp_c+2)
+	ld (sp_key+2),a
+	add a,a
+	add a,a
+	add a,a
+	add a,b
+	and 63
+	ld (sp_slot),a
+	ld a,(sp_c+1)
+	add a,a
+	add a,a
+	add a,a
+	add a,a
+	ld c,a
+	ld a,(sp_c+3)
+	and $0F
+	or c
+	ld (sp_key+3),a
+	; slot position: x = (slot mod 7) * 72, y = SCACHE_Y + (slot / 7) * 42
+	ld a,(sp_slot)
+	ld hl,SCACHE_Y
+	ld de,42
+spc_div:
+	cp 7
+	jr c,spc_divd
+	sub 7
+	add hl,de
+	jr spc_div
+spc_divd:
+	ld (sp_sy),hl
+	ld l,a
+	ld h,0
+	add hl,hl
+	add hl,hl
+	add hl,hl		; *8
+	ld d,h
+	ld e,l
+	add hl,hl
+	add hl,hl
+	add hl,hl		; *64
+	add hl,de		; *72
+	ld (sp_sx),hl
+	; sprite data page written since last time? -> refill
+	ld a,(sp_key)
+	rrca
+	rrca
+	and $3F			; ptr*64 / 256 = page within $C000-$FFFF
+	ld e,a
+	ld d,0
+	ld hl,SDIRTY
+	add hl,de
+	ld a,(hl)
+	or a
+	jr nz,spc_fill
+	; key match?
+	ld a,(sp_slot)
+	add a,a
+	add a,a
+	ld e,a
+	ld d,0
+	ld hl,SCACHE
+	add hl,de
+	ld de,sp_key
+	ld b,4
+spc_cmp:
+	ld a,(de)
+	cp (hl)
+	jr nz,spc_fill
+	inc hl
+	inc de
+	djnz spc_cmp
+	ret
+spc_fill:
+	ld a,(sp_slot)		; store the key
+	add a,a
+	add a,a
+	ld e,a
+	ld d,0
+	ld hl,SCACHE
+	add hl,de
+	ex de,hl
+	ld hl,sp_key
+	ld bc,4
+	ldir
+	ld hl,(sp_data)		; (sp_data was set by spr_one)
+	; LMMC the full decoded shape into the slot
+	call v_wait
+	ld a,36
+	out (V_SEL),a
+	ld hl,(sp_sx)
+	call v_outw		; DX
+	ld hl,(sp_sy)
+	call v_outw		; DY
+	ld hl,(sp_w)
+	call v_outw		; NX
+	ld hl,(sp_h)
+	call v_outw		; NY
+	xor a
+	out (V_REG),a		; ARG
+	ld a,$0C
+	out (V_REG),a		; LOP: copy
 	ld a,$FF
 	out (V_REG),a
 	out (V_REG),a		; WM
@@ -702,32 +858,34 @@ so_h:
 	out (V_REG),a		; BC
 	ld a,$10
 	out (V_REG),a		; CMD: LMMC
-	; stream the visible lines
-	ld hl,(sp_cy0)		; first visible output line
-	ld a,(sp_ch)
-	ld b,a			; lines to send
-so_line:
-	push bc
-	push hl
-	ld a,(sp_ymul)		; source row = line / ymul
-	dec a
-	ld a,l
-	jr z,so_row
-	srl a
-so_row:
-	call spr_decode		; SPRLINE = 72 px of source row A
-	ld hl,(sp_cx0)
-	ld de,SPRLINE
-	add hl,de
-	ld a,(sp_cw)
+	xor a
+spc_row:
+	push af
+	call spr_decode
+	ld hl,SPRLINE
+	ld a,(sp_w)
 	ld b,a
 	ld c,V_CMD
 	otir
-	pop hl
-	inc hl
-	pop bc
-	djnz so_line
-	ld a,(RV_CODESEG)	; (render maps SEG_IO/SEG0+3; the caller re-maps)
+	ld a,(sp_ymul)		; Y expand: send the line twice
+	dec a
+	jr z,spc_row1
+	ld hl,SPRLINE
+	ld a,(sp_w)
+	ld b,a
+	otir
+spc_row1:
+	pop af
+	inc a
+	cp 21
+	jr nz,spc_row
+	ret
+
+v_outw:				; HL -> two register bytes
+	ld a,l
+	out (V_REG),a
+	ld a,h
+	out (V_REG),a
 	ret
 
 ; clip_lo: HL = start (signed), DE = window start -> HL = cut amount (>= 0)

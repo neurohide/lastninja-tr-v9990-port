@@ -340,9 +340,11 @@ wh_ram:
 	ld a,h
 	jr nc,wh_nod
 wh_mark:
-	sub $C0			; VIC bank 3 page -> dirty flag
+	sub $C0			; VIC bank 3 page -> dirty flags (screen, sprites)
 	ld l,a
 	ld h,DIRTY/256
+	ld (hl),1
+	set 6,l
 	ld (hl),1
 	pop hl
 	push hl
