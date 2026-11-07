@@ -72,3 +72,5 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - KERNAL traps: setpc -> kernal_trap for targets $E000-$FFFF while the KERNAL is mapped. Done: SETMSG SETLFS SETNAM OPEN CLOSE CHKIN CLRCHN CHRIN READST LOAD GETIN CHROUT CLALL, $F642. Unknown address: halt with it in k_bad ($C890).
 - Level load check: `LOADTEST=1 python3 emu/embuild.py` runs `jsr $0400` (LOAD "HF") + `jsr $0450` (hf streams LA1 via CHRIN and depacks); RAM afterwards equals `emu/ref_load.py` (same load on ref6502) byte for byte.
 - Not yet seen: a real level change triggered by the game itself (needs playing to the end of level 1).
+- Checked "ninja missing after screen change": not a renderer bug. Walking right leads into a fight; the enemy drains POWER, the game then shows the ninja's start screen with the sprites briefly not visible, and ~10 s later ninja and enemy are drawn again (screenshots /tmp/ln/w_*.png, d5.png in that session). POWER spiral and ENEMY bar update correctly.
+- openMSX VRAM debuggable is "Sunrise GFX9000 VRAM"; its addresses are not the linear B-mode layout (reads at y*512+x gave 0 over visible grass), so check VRAM through screenshots.
