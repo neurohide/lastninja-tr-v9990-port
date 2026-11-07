@@ -50,3 +50,10 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - Speed: ~1 emulated frame/s (~5k 6502 instr/s) vs 50 needed. Core unoptimised.
 - TODO: sprites, speed, SID->PSG, KERNAL LOAD -> MSX-DOS disk (level change), keyboard matrix ($DC01), title/menu screens (fixed VIC bank in renderer).
 - `RENDER_TEST=1 python3 emu/build.py`: render captured screen once and halt (renderer check).
+
+## Speed pass (emu/)
+- Core rewrite: Z80 pages all RAM (P0 = 6502 $0000-$3FFF direct, P1 = core copy, P2 = window, P3 = system); PC = Z80 pointer in DE; X/Y in B/C; lazy flags (RV_N/Z/C/V); inline dispatch; slice counter on control flow only (SLICE=4 per raster line). `embuild.py` (was build.py), `run_tests.py` uses the same machine in TEST mode: 40/40 seeds pass.
+- Idle skip: game patch `$BD19 F0->02`; opcode `$02` (h_idle) fast-forwards straight to the next event (frame end, raster compare, timer underflow). CIA timer A is counted in raster lines.
+- Dirty pages: writes to VIC bank 3 ($C000-$FFFF, except sprite pointers $C3F8-$C3FF) and colour RAM mark 256-byte pages; renderer redraws only touched character rows.
+- Result: ~1.3 -> ~55 emulated frames/s; now throttled to 50 Hz on the turbo R system timer (`frame_sync`, THROTTLE=0 to disable). `emu/prof.sh N` = PC profile (6502 + Z80 routines).
+- Not yet known: frame rate in busy scenes (fights, many enemies), since there is no input test yet.

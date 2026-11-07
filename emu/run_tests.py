@@ -4,6 +4,7 @@ import os, random, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from ref6502 import CPU
+from embuild import build
 from parse6502 import OPS
 NOFLOW = {'brk', 'jmp', 'jsr', 'rts', 'rti'}
 CH = [o for o, (m, md, n) in OPS.items() if m not in NOFLOW]
@@ -22,26 +23,25 @@ def gen_prog(rnd, n):
 def run(seed, n=150, full=150):
     rnd = random.Random(seed)
     prog = gen_prog(rnd, full); regs = [rnd.randrange(256) for _ in range(3)] + [rnd.randrange(256) & 0xCF | 0x20]
-    d = open(os.path.join(HERE, 'testdata.inc'), 'w')
-    d.write('initregs:\n\tdb %s\n\tdw %d\n' % (','.join(map(str, regs)), n))
-    d.write('prog:\n' + ''.join('\tdb %d\n' % x for x in prog) + 'progend:\n'); d.close()
-    r = subprocess.run(['z80asm', '-o', os.path.join(HERE, 't.rom'), harness], cwd=HERE, capture_output=True, text=True)
-    if r.returncode: print(r.stdout, r.stderr); sys.exit(1)
+    mem0 = bytearray(65536); mem0[0x200:0x200 + len(prog)] = prog
+    sym = dict(START_PC=0x200, START_PORT=0x37, ST_A=regs[0], ST_X=regs[1], ST_Y=regs[2], ST_S=0xFF,
+               ST_P=regs[3], ST_CMP=0, ST_IMR=0, ST_MASK=0, ST_CRA=0, ST_TLAT=0, ST_TCNT=0, ST_N=n)
+    build(sym, mem0, bytes(4096), os.path.join(HERE, 't.rom'), test=True)
     open(os.path.join(HERE, 'dump.tcl'), 'w').write('''
 set throttle off
 after time 12 {
  set f [open "%s/dump.txt" w]
  set s ""
- for {set i 0} {$i < 10} {incr i} { append s [format "%%02X " [debug read memory [expr {0xC000 + $i}]]] }
+ foreach a {0 40 41 2 4 5 44 45 42 43} { append s [format "%%02X " [debug read memory [expr {0xC000 + $a}]]] }
  puts $f $s
  set s ""
- for {set i 0} {$i < 0x400} {incr i} { append s [format "%%02X" [debug read memory [expr {0x8000 + $i}]]] }
+ for {set i 0} {$i < 0x400} {incr i} { append s [format "%%02X" [debug read "Main RAM" [expr {4*16384 + $i}]]] }
  puts $f $s
  close $f
  exit
 }
 ''' % HERE)
-    subprocess.run(['openmsx', '-machine', 'Panasonic_FS-A1GT', '-cart', os.path.join(HERE, 't.rom'),
+    subprocess.run(['openmsx', '-machine', 'Panasonic_FS-A1GT', '-cart', os.path.join(HERE, 't.rom'), '-romtype', 'ASCII16',
                     '-script', os.path.join(HERE, 'dump.tcl')], capture_output=True, timeout=120)
     lines = open(os.path.join(HERE, 'dump.txt')).read().split('\n')
     z = [int(x, 16) for x in lines[0].split()]; zmem = bytes.fromhex(lines[1])
@@ -51,8 +51,8 @@ after time 12 {
         for _ in range(n): c.step()
     except KeyError:
         print('seed', seed, 'skipped (self-overwrite hit an illegal opcode)'); return True
-    exp = [c.a, c.x, c.y, c.sp, c.P() & ~0x10, None, None, None, c.pc & 255, c.pc >> 8]
-    got = [z[0], z[1], z[2], z[3], z[4] & ~0x10, None, None, None, z[8], z[9]]
+    exp = [c.a, c.x, c.y, c.sp, c.P() & 0xCF, c.pc & 255, c.pc >> 8]
+    got = [z[0], z[1], z[2], z[3], z[6] & 0xCF, z[8], z[9]]
     ok = exp == got and bytes(mem[:0x400]) == zmem
     if not ok:
         print('seed', seed, 'FAIL\n exp', [None if v is None else '%02X' % v for v in exp], '\n got', [None if v is None else '%02X' % v for v in got])
@@ -61,7 +61,6 @@ after time 12 {
     return ok
 
 
-harness = 'harness.asm'
 def bisect(seed):
     lo, hi = 0, 150
     while hi - lo > 1:

@@ -13,7 +13,6 @@ VID_X:		equ 8			; byte offset of C64 column 0 (16 px)
 VID_Y:		equ 6			; V9990 line of C64 bitmap line 0
 CELLTAB:	equ $C300		; 40 cells x 4 colours (byte = c*17), page aligned
 ROWBUF:		equ $C200		; 40 colour RAM + 40 screen bytes
-RENDER_EVERY:	equ 4			; emulated frames per redraw
 
 v_init:
 	ld a,2
@@ -98,6 +97,10 @@ render:
 	ld a,($8021)
 	and $0F
 	ld (rd_bg),a
+	ld hl,rd_lastbg		; background changed: redraw everything
+	cp (hl)
+	ld (hl),a
+	call nz,dirty_all
 	xor a
 	ld (rd_row),a
 rd_rowloop:
@@ -114,6 +117,9 @@ rd_rowloop:
 	add hl,hl		; row*32
 	add hl,de		; row*40
 	ld (rd_r40),hl
+	call row_dirty
+	jp z,rd_nextrow
+	ld hl,(rd_r40)
 	ld a,SEG_IO
 	out (PORT_P2),a
 	ld de,$8800		; $D800 in SEG_IO
@@ -256,12 +262,85 @@ rd_byte:
 	ld (rd_line),a
 	cp 8
 	jp nz,rd_lineloop
+rd_nextrow:
 	ld a,(rd_row)
 	inc a
 	ld (rd_row),a
 	cp 25
 	jp nz,rd_rowloop
+	ld hl,DIRTY		; all drawn
+	ld b,64
+rd_clr:
+	ld (hl),0
+	inc hl
+	djnz rd_clr
 	pop de
+	ret
+
+dirty_all:
+	ld hl,DIRTY
+	ld b,64
+da_loop:
+	ld (hl),1
+	inc hl
+	djnz da_loop
+	ret
+
+; NZ if any page holding row data changed: HL = row*40.
+; screen ($C000) and colour RAM ($D800): pages of row*40 and row*40+39;
+; bitmap ($E000): pages of row*320 .. row*320+319.
+row_dirty:
+	push hl
+	ld de,39
+	add hl,de
+	ld e,h			; last screen page
+	pop hl
+	push hl
+	ld d,h			; first screen page
+	ld h,DIRTY/256
+	ld l,d
+	ld b,(hl)
+	ld l,e
+	ld a,(hl)
+	or b
+	ld b,a
+	ld a,d
+	add a,$18		; colour RAM
+	ld l,a
+	ld a,(hl)
+	or b
+	ld b,a
+	ld a,e
+	add a,$18
+	ld l,a
+	ld a,(hl)
+	or b
+	ld b,a
+	pop hl
+	add hl,hl
+	add hl,hl
+	add hl,hl		; row*320
+	ld a,h
+	push hl
+	ld de,319
+	add hl,de
+	ld e,h			; last bitmap page
+	pop hl
+	ld d,a			; first bitmap page
+	ld h,DIRTY/256
+rdy_loop:
+	ld a,d
+	add a,$20		; bitmap at $E000
+	ld l,a
+	ld a,(hl)
+	or b
+	ld b,a
+	ld a,d
+	inc d
+	cp e
+	jr nz,rdy_loop
+	ld a,b
+	or a
 	ret
 
 x17:				; A = colour 0-15 -> colour * $11

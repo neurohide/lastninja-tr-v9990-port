@@ -10,7 +10,7 @@ set ::log [open "$OUT.txt" w]
 proc w16 {a} { expr {[debug read memory \$a] + 256*[debug read memory [expr {\$a+1}]]} }
 proc m6502 {a} { debug read "Main RAM" [expr {4*16384 + \$a}] }
 proc tick {} {
-  puts \$::log [format "t=%5.1f frames=%d line=%d irqs=%d pc6502=%04X port=%02X io=%d irr=%02X imr=%02X icr=%02X mask=%02X cra=%02X zp1B=%02X" [machine_info time] [w16 0xC010] [w16 0xC00E] [w16 0xC01E] [reg de] [debug read memory 0xC00C] [debug read memory 0xC00A] [debug read memory 0xC014] [debug read memory 0xC015] [debug read memory 0xC016] [debug read memory 0xC017] [debug read memory 0xC018] [m6502 0x1B]]
+  puts \$::log [format "t=%5.1f frames=%d line=%d irqs=%d de=%04X seg=%d port=%02X io=%d imr=%02X mask=%02X zp1B=%02X" [machine_info time] [w16 0xC010] [w16 0xC00E] [w16 0xC01E] [reg de] [debug read memory 0xC00A] [debug read memory 0xC00D] [debug read memory 0xC00B] [debug read memory 0xC015] [debug read memory 0xC017] [m6502 0x1B]]
   flush \$::log
   after time 1 tick
 }
