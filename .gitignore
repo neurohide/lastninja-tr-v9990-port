@@ -1,3 +1,7 @@
 msx/build/
 __pycache__/
 *.pyc
+emu/t.rom
+emu/dump.txt
+emu/dump.tcl
+emu/testdata.inc

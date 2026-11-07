@@ -34,3 +34,10 @@ Still TODO: jump tables (none found yet), memory model for code at `$5000-$7FFF`
 - Opcode-modifying stores: `$BCB6`->`$BC66` (main-loop `jsr` table patched at runtime; loop at `$BCB1-$BCBA` overlaps `jsr $BD66` = mid-instruction branch target `$BCB3`); `$0442/$0445/$044A` patch the hf loader stubs. `translate.py` now logs these in `OPMOD` instead of raising; tracer keeps overlapping decodes (`BAD` logs them).
 - Unsupported 6502 ops (translator never needed them for Buggy Boy): `bit`x19, `php`x5, `plp`x8, `bvs`x3, `bvc`x1, `brk`x3. Needs a V flag (also set by ADC/SBC) and PHP/PLP flag packing. First hard stop: `unhandled bit at 76BF`.
 - Not started: memory-model change, kernel/renderer, MSX-DOS loader, ROM.
+
+## Emulation route (chosen)
+`emu/`: 6502 interpreter for Z80/R800.
+- `gen6502.py` -> `core.asm` (151 documented opcodes incl. bit/php/plp/bvs/bvc/brk, V flag; no decimal mode). 6502 PC in DE, regs in RAM (`RV_*`), 64K 6502 memory = 4 mapper segments via Z80 page 2. Unoptimised (call per memory access).
+- `ref6502.py`: Python reference CPU. `run_tests.py N`: random 150-instr programs, core run in openMSX (FS-A1GT) via `harness.asm`, regs + `$0000-$03FF` compared. `run_tests.py bisect S` finds first diverging instruction.
+- Status: 40/40 seeds pass (3 skipped where random code overwrote itself into illegal opcodes).
+- Next: load `dumps/game_run.mem` into the 4 segments, start at `$BD16`, add I/O traps for `$D000-$DFFF` (VIC/SID/CIA), raster IRQ, KERNAL LOAD -> MSX-DOS, V9990 output; then speed (inline zero-page/stack access, R800).
