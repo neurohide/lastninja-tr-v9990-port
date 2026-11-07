@@ -1,5 +1,6 @@
 ; Test ROM: runs the generated 6502 core on a program from testdata.inc
 SEG0:		equ 4
+TRAPS:		equ 0
 PORT_P2:	equ $FE
 RV:		equ $C000
 RV_A:		equ RV

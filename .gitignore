@@ -5,3 +5,7 @@ emu/t.rom
 emu/dump.txt
 emu/dump.tcl
 emu/testdata.inc
+emu/machine.bin
+emu/machine.lbl
+emu/lastninja.rom
+emu/core.asm

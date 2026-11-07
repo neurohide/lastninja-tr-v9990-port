@@ -3,6 +3,17 @@
 ; RV_* variables, SEG0 and PORT_P2 come from the including file.
 
 rd:                     ; HL=6502 addr -> A ; keeps HL,BC,DE
+	if TRAPS
+	ld a,h
+	cp $D0
+	jr c,rd_ram
+	cp $E0
+	jr nc,rd_ram
+	ld a,(RV_IO)
+	or a
+	jp nz,io_rd
+rd_ram:
+	endif
 	push hl
 	ld a,h
 	rlca
@@ -19,6 +30,29 @@ rd:                     ; HL=6502 addr -> A ; keeps HL,BC,DE
 	ret
 
 wr:                     ; HL=6502 addr, A=value ; keeps HL,BC,DE
+	if TRAPS
+	push af
+	ld a,h
+	or a
+	jr z,wr_zp
+	cp $D0
+	jr c,wr_ram0
+	cp $E0
+	jr nc,wr_ram0
+	ld a,(RV_IO)
+	or a
+	jp nz,io_wr
+	jr wr_ram0
+wr_zp:
+	ld a,l
+	dec a
+	jr nz,wr_ram0
+	pop af
+	call port_wr
+	push af
+wr_ram0:
+	pop af
+	endif
 	push hl
 	push af
 	ld a,h
