@@ -9,7 +9,7 @@ ROOT = os.path.dirname(HERE)
 def build(sym, ram, io, out, test=False):
     subprocess.run([sys.executable, os.path.join(HERE, 'gen6502.py'), '1' if test else '0'], check=True,
                    stdout=subprocess.DEVNULL)
-    sym = dict(sym, TEST=int(test), TRAPS=int(not test), RENDER_EVERY=2, THROTTLE=int(os.environ.get('THROTTLE', '1')), AUTOWALK=int(os.environ.get('AUTOWALK', '0')), STOPFRAME=int(os.environ.get('STOPFRAME', '0')),
+    sym = dict(sym, TEST=int(test), TRAPS=int(not test), RENDER_EVERY=2, THROTTLE=int(os.environ.get('THROTTLE', '1')), AUTOWALK=int(os.environ.get('AUTOWALK', '0')), AW_START=int(os.environ.get('AW_START', '400')), STOPFRAME=int(os.environ.get('STOPFRAME', '0')),
                RENDER_TEST=int(os.environ.get('RENDER_TEST', '0')))
     open(os.path.join(HERE, 'state.inc'), 'w').write(''.join('%s:\tequ $%04X\n' % kv for kv in sym.items()))
     r = subprocess.run(['z80asm', '-o', 'machine.bin', '-Lmachine.lbl', 'machine.asm'], cwd=HERE,
@@ -27,7 +27,10 @@ def build(sym, ram, io, out, test=False):
 PATCHES = {0xBD19: (0xF0, 0x02),   # main loop: wait for $1B (frame counter) to change
            0x687E: (0x86, 0x12),   # 8x8 multiply -> native
            0xB00B: (0xA2, 0x32),   # music player SID register copy -> native
-           0x5690: (0xA0, 0x42)}   # IRQ sprite register update -> native
+           0x5690: (0xA0, 0x42),   # IRQ sprite register update -> native
+           0x7B69: (0xA0, 0x52),   # sprite mask -> native
+           0x7B86: (0xA0, 0x62),   # mirrored sprite mask -> native
+           0x7E36: (0xBD, 0x72)}   # sprite frame decompressor -> native
 
 
 def game():

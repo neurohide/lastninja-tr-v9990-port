@@ -22,6 +22,8 @@ VID_Y:		equ 6			; V9990 y of C64 bitmap line 0
 CLEAN_Y:	equ 256			; y of the sprite-free background copy
 CELLTAB:	equ $C300		; 40 cells x 4 colours, page aligned
 ROWBUF:		equ $C200		; 40 colour RAM + 40 screen bytes
+ROWPEND:	equ $C480		; 25 flags: character row still to be drawn
+rd_count:	equ $C49A		; rows drawn in this render
 SPRREG:		equ $C500		; copy of $D000-$D02E
 OLDBOX:		equ $C540		; 8 x (x, y, w, h) words: boxes drawn last frame
 SPRLINE:	equ $C600		; one decoded sprite line (72 px)
@@ -46,6 +48,7 @@ sp_key:		equ $C6B0		; 4 key bytes of the current sprite
 sp_slot:	equ $C6B4		; slot index
 sp_sx:		equ $C6B6		; 2 slot x in VRAM
 sp_sy:		equ $C6B8		; 2 slot y in VRAM
+SCSUM:		equ $C900		; 64 x 2: checksum of the data each slot was filled from
 SDIRTY:		equ DIRTY+64		; pages of $C000-$FFFF written since sprites were drawn
 WIN_X0:		equ VID_X
 WIN_X1:		equ VID_X+480
@@ -107,6 +110,12 @@ vi_ob:
 	ld (hl),0
 	inc hl
 	djnz vi_ob
+	ld hl,ROWPEND		; no rows pending
+	ld b,25
+vi_rp:
+	ld (hl),0
+	inc hl
+	djnz vi_rp
 	ld hl,SCACHE		; empty sprite cache
 	ld bc,256
 vi_sc:
@@ -207,8 +216,44 @@ rn_sd:
 
 ; draw changed character rows into the clean copy and blit them on screen
 bg_rows:
+	; fold the page flags into per-row pending flags, then clear the pages
 	xor a
 	ld (rd_row),a
+br_fold:
+	ld a,(rd_row)
+	ld l,a
+	ld h,0
+	add hl,hl
+	add hl,hl
+	add hl,hl
+	ld d,h
+	ld e,l
+	add hl,hl
+	add hl,hl
+	add hl,de		; row*40
+	call row_dirty
+	jr z,br_fold1
+	ld a,(rd_row)
+	ld e,a
+	ld d,0
+	ld hl,ROWPEND
+	add hl,de
+	ld (hl),1
+br_fold1:
+	ld a,(rd_row)
+	inc a
+	ld (rd_row),a
+	cp 25
+	jr nz,br_fold
+	ld hl,DIRTY
+	ld b,64
+rd_clr:
+	ld (hl),0
+	inc hl
+	djnz rd_clr
+	xor a
+	ld (rd_row),a
+	ld (rd_count),a
 rd_rowloop:
 	ld a,(rd_row)
 	ld l,a
@@ -222,8 +267,24 @@ rd_rowloop:
 	add hl,hl		; row*32
 	add hl,de		; row*40
 	ld (rd_r40),hl
-	call row_dirty
+	ld a,(rd_row)		; pending?
+	ld e,a
+	ld d,0
+	ld hl,ROWPEND
+	add hl,de
+	ld a,(hl)
+	or a
 	jp z,rd_nextrow
+	call row_budget		; time left for another row this frame?
+	ret z
+	ld a,(rd_row)
+	ld e,a
+	ld d,0
+	ld hl,ROWPEND
+	add hl,de
+	ld (hl),0
+	ld hl,rd_count
+	inc (hl)
 	ld hl,(rd_r40)
 	ld a,SEG_IO
 	out (PORT_P2),a
@@ -383,12 +444,33 @@ rd_nextrow:
 	ld (rd_row),a
 	cp 25
 	jp nz,rd_rowloop
-	ld hl,DIRTY		; all drawn
-	ld b,64
-rd_clr:
-	ld (hl),0
-	inc hl
-	djnz rd_clr
+	ret
+
+; NZ = draw another row: always the first one of a render; afterwards only
+; while the frame slot has at least TICKS_ROW system timer ticks left.
+TICKS_ROW:	equ 2300		; ~9 ms: one character row at 8 bpp
+row_budget:
+	ld a,(rd_count)
+	or a
+	jr z,rb_yes
+	if THROTTLE
+	call sys_timer
+	ex de,hl
+	ld hl,(RV_DEADLINE)
+	or a
+	sbc hl,de		; deadline - now
+	bit 7,h
+	jr nz,rb_no		; already late
+	ld de,TICKS_ROW
+	or a
+	sbc hl,de
+	jr c,rb_no
+	endif
+rb_yes:
+	or 1
+	ret
+rb_no:
+	xor a
 	ret
 
 dirty_all:
@@ -789,7 +871,7 @@ spc_divd:
 	add hl,hl		; *64
 	add hl,de		; *72
 	ld (sp_sx),hl
-	; sprite data page written since last time? -> refill
+	; sprite data page written since last time? -> compare checksums
 	ld a,(sp_key)
 	rrca
 	rrca
@@ -800,8 +882,20 @@ spc_divd:
 	add hl,de
 	ld a,(hl)
 	or a
+	jr z,spc_key
+	call spr_sum		; DE = checksum of the 63 data bytes
+	ld a,(sp_slot)
+	add a,a
+	ld l,a
+	ld h,SCSUM/256
+	ld a,(hl)
+	cp e
 	jr nz,spc_fill
-	; key match?
+	inc l
+	ld a,(hl)
+	cp d
+	jr nz,spc_fill
+spc_key:			; key match?
 	ld a,(sp_slot)
 	add a,a
 	add a,a
@@ -820,6 +914,14 @@ spc_cmp:
 	djnz spc_cmp
 	ret
 spc_fill:
+	call spr_sum		; remember the checksum of what goes into the slot
+	ld a,(sp_slot)
+	add a,a
+	ld l,a
+	ld h,SCSUM/256
+	ld (hl),e
+	inc l
+	ld (hl),d
 	ld a,(sp_slot)		; store the key
 	add a,a
 	add a,a
@@ -879,6 +981,20 @@ spc_row1:
 	inc a
 	cp 21
 	jr nz,spc_row
+	ret
+
+spr_sum:			; DE = Fletcher-16 of the 63 bytes at sp_data
+	ld hl,(sp_data)
+	ld de,0
+	ld b,63
+ss_loop:
+	ld a,e
+	add a,(hl)
+	ld e,a
+	add a,d
+	ld d,a
+	inc hl
+	djnz ss_loop
 	ret
 
 v_outw:				; HL -> two register bytes
@@ -1028,27 +1144,26 @@ sdc_wide:
 ; ---- C64 joystick port 2 from MSX joystick 1 + cursor keys/space ----------
 ; out: A = C64 $DC00 bits, active low: b0 up b1 down b2 left b3 right b4 fire
 joy_read:
-	if AUTOWALK		; benchmark: hold right from frame 100 to 599
+	if AUTOWALK		; benchmark: hold right from frame AW_START to AUTOWALK-1
 	push hl
+	push de
 	ld hl,(RV_FRAMES)
-	ld a,h
+	ld de,AW_START
 	or a
-	jr nz,aw_hi
-	ld a,l
-	cp 100
-	jr c,aw_off
-	jr aw_on
-aw_hi:
-	ld a,h
-	cp 2
-	jr nc,aw_off
-	ld a,l
-	cp 600-512
-	jr nc,aw_off
+	sbc hl,de
+	jr c,aw_off0
+	ld hl,(RV_FRAMES)
+	ld de,AUTOWALK
+	or a
+	sbc hl,de
+	jr nc,aw_off0
+	pop de
 aw_on:
 	pop hl
 	ld a,$F7		; right
 	ret
+aw_off0:
+	pop de
 aw_off:
 	pop hl
 	ld a,$FF

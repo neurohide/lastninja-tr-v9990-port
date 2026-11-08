@@ -5,11 +5,12 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 cat > /tmp/ln/prof.tcl <<TCL
 set throttle off
 set ::f [open /tmp/ln/prof.samples w]
-proc s {} { puts \$::f "[format %04X [reg de]] [debug read memory 0xC00A] [format %04X [reg pc]]"; after time 0.0002 s }
-after time 16 s
-after time [expr {16 + $SECS}] { close \$::f; exit }
+proc s {} { puts \$::f "[format %04X [reg de]] [debug read memory 0xC00A] [format %04X [reg pc]] [expr {[debug read memory 0xC010] + 256*[debug read memory 0xC011]}] [format %.3f [machine_info time]]"; after time 0.0002 s }
+after time ${PROF_FROM:-16} s
+${PROF_TCL:-}
+after time [expr {${PROF_FROM:-16} + $SECS}] { close \$::f; exit }
 TCL
-openmsx -machine Panasonic_FS-A1GT -ext gfx9000 -cart "$HERE/lastninja.rom" -romtype ASCII16 -diska "$HERE/lastninja.dsk" -script /tmp/ln/prof.tcl >/dev/null 2>&1
+openmsx -machine Panasonic_FS-A1GT -ext gfx9000 -cart "$HERE/lastninja.rom" -romtype ASCII16 -diska "$HERE/lastninja.dsk" ${PROF_STATE:+-savestate $PROF_STATE} -script /tmp/ln/prof.tcl >/dev/null 2>&1
 python3 - "$HERE/machine.lbl" <<'P'
 import sys, collections
 lab = {}
@@ -21,8 +22,19 @@ addrs = sorted(lab)
 import bisect
 c6, cz = collections.Counter(), collections.Counter()
 n = 0
-for l in open('/tmp/ln/prof.samples'):
-    de, seg, pc = l.split(); de = int(de, 16); seg = int(seg); pc = int(pc, 16); n += 1
+import os
+rows = [l.split() for l in open('/tmp/ln/prof.samples')]
+slow = os.environ.get('SLOW_FPS')
+if slow:                                     # keep samples of 1 s windows below SLOW_FPS
+    secs = {}
+    for r in rows:
+        s = int(float(r[4])); fr = int(r[3])
+        lo, hi = secs.get(s, (fr, fr)); secs[s] = (min(lo, fr), max(hi, fr))
+    keep = {s for s, (lo, hi) in secs.items() if hi - lo < int(slow)}
+    print('slow seconds:', sorted(keep))
+    rows = [r for r in rows if int(float(r[4])) in keep]
+for r in rows:
+    de, seg, pc = r[:3]; de = int(de, 16); seg = int(seg); pc = int(pc, 16); n += 1
     a = de if de < 0x4000 else ((seg - 4) << 14) | (de & 0x3FFF)
     c6[a & 0xFFF0] += 1
     i = bisect.bisect_right(addrs, pc) - 1

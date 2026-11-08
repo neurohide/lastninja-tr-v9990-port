@@ -4651,7 +4651,7 @@ optab_lo:
 	db emu_bad & 255
 	db h_50 & 255
 	db h_51 & 255
-	db emu_bad & 255
+	db h_mask & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_55 & 255
@@ -4667,7 +4667,7 @@ optab_lo:
 	db emu_bad & 255
 	db h_60 & 255
 	db h_61 & 255
-	db emu_bad & 255
+	db h_maskflip & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_65 & 255
@@ -4683,7 +4683,7 @@ optab_lo:
 	db emu_bad & 255
 	db h_70 & 255
 	db h_71 & 255
-	db emu_bad & 255
+	db h_unpack & 255
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_75 & 255
@@ -4908,7 +4908,7 @@ optab_hi:
 	db emu_bad / 256
 	db h_50 / 256
 	db h_51 / 256
-	db emu_bad / 256
+	db h_mask / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_55 / 256
@@ -4924,7 +4924,7 @@ optab_hi:
 	db emu_bad / 256
 	db h_60 / 256
 	db h_61 / 256
-	db emu_bad / 256
+	db h_maskflip / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_65 / 256
@@ -4940,7 +4940,7 @@ optab_hi:
 	db emu_bad / 256
 	db h_70 / 256
 	db h_71 / 256
-	db emu_bad / 256
+	db h_unpack / 256
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_75 / 256

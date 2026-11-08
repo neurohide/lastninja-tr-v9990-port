@@ -284,7 +284,7 @@ def handler(op, mn, mode):
 
 
 # patched-in opcodes (illegal on the 6502), handlers in machine.asm
-SPECIAL = {0x02: 'h_idle', 0x12: 'h_mul', 0x32: 'h_sidcopy', 0x42: 'h_sprregs'}
+SPECIAL = {0x02: 'h_idle', 0x12: 'h_mul', 0x32: 'h_sidcopy', 0x42: 'h_sprregs', 0x52: 'h_mask', 0x62: 'h_maskflip', 0x72: 'h_unpack'}
 
 
 def main():

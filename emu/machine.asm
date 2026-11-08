@@ -1267,6 +1267,206 @@ hsr_ptr:
 	call kt_rts		; rts
 	jp core_dispatch
 
+; ---- native sprite builders of the game (patched in) ----------------------
+SPRBUF:		equ $02C0		; the game's decompressed sprite frame (63+ bytes)
+
+; $72 = sprite frame decompressor at $7E36 (X = frame number):
+;   ($06) = $8000,x | $80C0,x << 8; bytes < $A0 or >= $B0 literal, $A0 = next
+;   byte literal, $A1-$AF = n zeros; until 63 bytes.  Exit A=$FF (N), C set,
+;   X/Y = final buffer / source index, $4E as the 6502 code leaves it.
+h_unpack:
+	push de
+	ld h,$80		; $8000 + X (segment 6)
+	ld l,b
+	call rd_any
+	ld ($0006),a
+	ld e,a
+	ld a,b			; $80C0 + X (may cross into $81xx)
+	add a,$C0
+	ld l,a
+	ld a,$80
+	adc a,0
+	ld h,a
+	call rd_any
+	ld ($0007),a
+	ld d,a			; DE = source pointer
+	ld b,0			; X
+	ld c,0			; Y
+hu_loop:
+	ld h,0			; source byte (DE + Y)
+	ld l,c
+	add hl,de
+	call rd_any
+	ld hl,SPRBUF
+	call hu_put
+	cp $A0
+	jr c,hu_lit
+	jr z,hu_esc
+	cp $B0
+	jr nc,hu_lit
+	and $0F			; $A1-$AF: n zeros
+	jr hu_zeros
+hu_esc:
+	inc c			; next byte literal
+	ld h,0
+	ld l,c
+	add hl,de
+	call rd_any
+	ld hl,SPRBUF
+	call hu_put
+hu_lit:
+	inc b
+hu_next:
+	inc c
+	ld a,b
+	cp $3F
+	jr c,hu_loop
+	pop de
+	ld a,$FF
+	db $FD,$6F		; ld iyl,a
+	db $DD,$67		; ld ixh,a
+	db $DD,$6F		; ld ixl,a
+	ld (RV_C),a		; C set (cpx #$3F with X >= $3F)
+	call kt_rts
+	jp core_dispatch
+hu_zeros:			; A = n (1-15): n zeros at SPRBUF + X
+	push af
+	ld a,c
+	ld ($004E),a		; sty $4E
+	pop af
+hu_z1:
+	push af
+	xor a
+	ld hl,SPRBUF
+	call hu_put
+	inc b
+	pop af
+	dec a
+	jr nz,hu_z1
+	jr hu_next
+hu_put:				; (SPRBUF + B) = A, page 2 of the 6502 ($02C0..$03BF)
+	push hl
+	push af
+	ld a,l
+	add a,b
+	ld l,a
+	jr nc,hp_nc
+	inc h
+hp_nc:
+	pop af
+	ld (hl),a
+	pop hl
+	ret
+
+; $52 = sprite mask at $7B69: dest = ($04); for y = 62..0:
+;   dest[y] = SPRBUF[y] & {$42, $43, $44}[y mod 3].  Exit Y=$FF (N), A = last.
+h_mask:
+	push de
+	ld hl,($0004)
+	ld de,SPRBUF
+	ld c,21
+hmk_row:
+	ld a,(de)
+	push hl
+	ld hl,$0042
+	and (hl)
+	pop hl
+	call wr_ram
+	inc de
+	inc hl
+	ld a,(de)
+	push hl
+	ld hl,$0043
+	and (hl)
+	pop hl
+	call wr_ram
+	inc de
+	inc hl
+	ld a,(de)
+	push hl
+	ld hl,$0044
+	and (hl)
+	pop hl
+	call wr_ram
+	inc de
+	inc hl
+	dec c
+	jr nz,hmk_row
+	ld a,(SPRBUF)		; A = last stored (y = 0)
+	ld hl,$0042
+	and (hl)
+	pop de
+	ld c,$FF		; Y
+	db $FD,$6F		; ld iyl,a
+	ld a,$FF
+	db $DD,$67		; ld ixh,a (N from dey)
+	db $DD,$6F		; ld ixl,a (Z clear)
+	call kt_rts
+	jp core_dispatch
+
+; $62 = mirrored sprite mask at $7B86 (T = table at $9D00): for each row r:
+;   dest[3r+2] = T[buf[3r]] & $44, dest[3r+1] = T[buf[3r+1]] & $43,
+;   dest[3r] = T[buf[3r+2]] & $42.  Exit Y=$FF (N), X = buf[2], A = last.
+h_maskflip:
+	push de
+	ld hl,($0004)
+	ld de,SPRBUF
+	ld c,21
+hmf_row:
+	ld a,(de)		; buf[3r] -> dest[3r+2]
+	call hmf_t
+	push hl
+	ld hl,$0044
+	and (hl)
+	pop hl
+	inc hl
+	inc hl
+	call wr_ram
+	dec hl
+	inc de
+	ld a,(de)		; buf[3r+1] -> dest[3r+1]
+	call hmf_t
+	push hl
+	ld hl,$0043
+	and (hl)
+	pop hl
+	call wr_ram
+	dec hl
+	inc de
+	ld a,(de)		; buf[3r+2] -> dest[3r]
+	call hmf_t
+	push hl
+	ld hl,$0042
+	and (hl)
+	pop hl
+	call wr_ram
+	inc hl
+	inc hl
+	inc hl
+	inc de
+	dec c
+	jr nz,hmf_row
+	ld a,(SPRBUF+2)
+	ld b,a			; X = buf[2]
+	call hmf_t
+	ld hl,$0042
+	and (hl)
+	pop de
+	ld c,$FF
+	db $FD,$6F		; ld iyl,a
+	ld a,$FF
+	db $DD,$67
+	db $DD,$6F
+	call kt_rts
+	jp core_dispatch
+hmf_t:				; A = T[A] (6502 $9D00 + A).  Keeps BC, DE, HL.
+	push hl
+	ld l,a
+	ld h,$9D
+	call rd_any
+	pop hl
+	ret
+
 ; advance one raster line: render at frame end, raster compare, CIA timer.
 ; Keeps BC, DE; re-maps the code segment.
 sched_line:
