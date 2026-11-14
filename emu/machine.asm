@@ -66,6 +66,12 @@ rd_lastbg:	equ RV+48
 RV_TLATL:	equ RV+50	; 2 timer A reload in raster lines
 RV_DEADLINE:	equ RV+52	; 2 system timer value of the next frame start
 RV_LATE:	equ RV+54	; 2 frames we were late (debug)
+RV_RTICKS:	equ RV+58	; 2 debug: system timer ticks spent in render (wraps)
+RV_STICKS:	equ RV+60	; 2 debug: ticks spent in sound_update
+RV_SKIP:	equ RV+62	; renders skipped in a row
+RV_NSKIP:	equ RV+63	; 2 debug: renders skipped in total
+RV_DACC:	equ RV+65	; dissolve: tenths of raster lines carried over
+RV_VDIRTY:	equ RV+66	; background screen/bitmap/colour data changed
 RV_CODEHI:	equ RV+56	; bits 7-6 of code addresses for the inline fast path ($00 in segment 7)
 TICKS_FRAME:	equ 5114		; 20 ms in 3.911 us system timer ticks
 BOOTRT:		equ $C100
@@ -477,6 +483,18 @@ wh_ram:
 	ld a,h
 	jr nc,wh_nod
 wh_mark:
+	; Only pages used by the bitmap background need a character-row scan.
+	; Sprite data pages still invalidate the sprite cache below.
+	ld a,h
+	cp $C4
+	jr c,wh_bgdirty
+	cp $E0
+	jr c,wh_page
+wh_bgdirty:
+	ld a,1
+	ld (RV_VDIRTY),a
+	ld a,h
+wh_page:
 	sub $C0			; VIC bank 3 page -> dirty flags (screen, sprites)
 	ld l,a
 	ld h,DIRTY/256
@@ -752,6 +770,9 @@ iw_gate:
 	call sid_gate
 	jr iw_done
 iw_colw:			; colour RAM: dirty page flags $18-$1B
+	ld a,1
+	ld (RV_VDIRTY),a
+	ld a,h
 	push hl
 	sub $C0
 	ld l,a
@@ -1467,6 +1488,185 @@ hmf_t:				; A = T[A] (6502 $9D00 + A).  Keeps BC, DE, HL.
 	pop hl
 	ret
 
+; $82 = one iteration of the screen-transition dissolve loop at $7DBB
+; (6502 code from $7DB3; loop counter $1E/$1F, RNG at $79D2, masks $7DFC,
+; row table $73CD).  Then PC = $7DBB again (or the rts at $7DFB when done)
+; and emulated time advances by the 6502 loop's cost, ~207 cycles = 3.3
+; raster lines, so the effect keeps its C64 duration and IRQs still run.
+DISS_PC:	equ $7DBB
+; segment 5 ($4000-$7FFF) holds the code, row table, masks and the RNG's data
+; ($5400-$7EFF); the bitmap ($E000-$FFFF) is segment 7.
+W5:		equ $8000-$4000		; 6502 address + W5 = window address (seg 5)
+W7:		equ $8000-$C000		; 6502 address + W7 = window address (seg 7)
+h_dissolve:
+	ld a,SEG0+1
+	out (PORT_P2),a
+hd_r1:
+	call rng_fast		; A = random
+	ld c,a			; Y
+	and 3
+	ld b,a			; X = A & 3
+	ld a,c
+	srl a
+	and $3E
+	cp $24
+	jr nc,hd_r1
+	ld l,a			; ($02) = word at $73CD + A
+	ld h,0
+	ld de,$73CD+W5
+	add hl,de
+	ld e,(hl)
+	inc hl
+	ld d,(hl)
+	ld ($0002),de
+hd_r2:
+	call rng_fast
+	cp $F0
+	jr nc,hd_r2
+	and $FE
+	ld c,a			; Y
+	ld a,b			; mask at $7DFC + X
+	add a,($7DFC+W5) & 255
+	ld l,a
+	ld h,($7DFC+W5) / 256
+	ld a,(hl)
+	ld l,c			; HL = row base + Y (always $E000-$FFFE: segment 7)
+	ld h,0
+	add hl,de
+	push af
+	ld a,h			; dirty page flags (screen rows, sprite data)
+	sub $C0
+	push hl
+	ld l,a
+	ld h,DIRTY/256
+	ld (hl),1
+	set 6,l
+	ld (hl),1
+	pop hl
+	ld de,W7
+	add hl,de
+	ld a,SEG0+3
+	out (PORT_P2),a
+	pop af
+	ld e,a
+	ld a,(hl)
+	and e
+	ld (hl),a
+	inc hl
+	ld a,(hl)
+	and e
+	ld (hl),a
+	inc c			; Y after iny
+	ld a,($001E)		; loop counter
+	or a
+	jr nz,hd_dec
+	ld hl,$001F
+	dec (hl)
+	jr z,hd_done
+hd_dec:
+	ld hl,$001E
+	dec (hl)
+	ld hl,DISS_PC
+	call setpc
+	jr hd_time
+hd_done:
+	xor a			; exit like the 6502 code: A = $1E = 0, Z, C clear
+	db $FD,$6F		; ld iyl,a
+	db $DD,$67		; ld ixh,a
+	db $DD,$6F		; ld ixl,a
+	ld (RV_C),a
+	ld hl,$7DFB		; rts
+	call setpc
+hd_time:			; advance (33 + carry) / 10 raster lines
+	ld a,(RV_DACC)
+	add a,33
+	ld l,0
+hd_t1:
+	cp 10
+	jr c,hd_t2
+	sub 10
+	inc l
+	jr hd_t1
+hd_t2:
+	ld (RV_DACC),a
+	ld a,l
+	call adv_lines
+	call irq_check
+	jp core_dispatch
+
+; advance A (1-15) raster lines: quiet stretches in one jump, sched_line at
+; each event.  Keeps BC, DE.
+adv_lines:
+	ld (RV_T),a
+al_loop:
+	push bc
+	push de
+	call lines_to_event	; HL = lines until the next event (>= 1)
+	ld a,(RV_T)
+	ld e,a
+	ld d,0
+	call min_hl_de		; HL = min(event, left)
+	dec hl			; lines before the one that runs sched_line
+	ld a,(RV_T)
+	sub l
+	ld (RV_T),a
+	ld a,h
+	or l
+	jr z,al_one
+	ex de,hl
+	ld hl,(RV_LINE)
+	add hl,de
+	ld (RV_LINE),hl
+	ld a,(RV_CRA)
+	and 1
+	jr z,al_one
+	ld hl,(RV_TCNT)
+	or a
+	sbc hl,de
+	ld (RV_TCNT),hl
+al_one:
+	pop de
+	pop bc
+	call sched_line
+	ld hl,RV_T
+	dec (hl)
+	jr nz,al_loop
+	ret
+
+; the game's RNG at $79D2 (Y preserved) with segment 5 mapped in page 2:
+; $74/$75 pointer ($5400-$7EFF), $76 sum, CIA1 timer A -> A.  Keeps BC, DE.
+rng_fast:
+	ld a,($0075)
+	cp $54
+	jr c,rf_seed
+	cp $7F
+	jr c,rf_go
+rf_seed:
+	call tcnt_cycles	; timer A: L = $DC04, H = $DC05
+	ld a,l
+	and $1F
+	add a,$54
+	ld ($0075),a
+	ld a,h
+	ld ($0074),a
+rf_go:
+	push de
+	ld hl,($0074)
+	ld de,W5
+	add hl,de
+	ld a,($0076)
+	add a,(hl)		; adc ($74),y with C = 0
+	push af
+	call tcnt_cycles
+	pop af
+	adc a,l			; adc $DC04 (carry from the first add)
+	ld ($0076),a
+	ld hl,($0074)
+	inc hl
+	ld ($0074),hl
+	pop de
+	ret
+
 ; advance one raster line: render at frame end, raster compare, CIA timer.
 ; Keeps BC, DE; re-maps the code segment.
 sched_line:
@@ -1497,7 +1697,7 @@ sc_nostop:
 	endif
 	ld a,l
 	and RENDER_EVERY-1
-	call z,render
+	call z,render_maybe
 	call sound_update
 	if THROTTLE
 	call frame_sync
@@ -1593,6 +1793,45 @@ sys_timer:			; HL = system timer (consistent read)
 	cp h
 	ret z
 	jr sys_timer
+
+; skip the render while behind the 50 Hz schedule (at most 3 in a row), so
+; the game code, and with it the IRQ-driven music, keeps real-time speed.
+render_maybe:
+	if THROTTLE
+	ld a,(RV_SKIP)
+	cp 3
+	jr nc,rm_draw
+	call sys_timer
+	ld de,(RV_DEADLINE)
+	or a
+	sbc hl,de		; now - deadline
+	bit 7,h
+	jr nz,rm_draw		; on time
+	ld a,h			; ignore huge values (deadline not set yet / wrap)
+	cp $40
+	jr nc,rm_draw
+	ld hl,RV_SKIP
+	inc (hl)
+	ld hl,(RV_NSKIP)
+	inc hl
+	ld (RV_NSKIP),hl
+	ret
+rm_draw:
+	xor a
+	ld (RV_SKIP),a
+	endif
+render_timed:			; render, adding its duration to RV_RTICKS
+	call sys_timer
+	push hl
+	call render
+	call sys_timer
+	pop de
+	or a
+	sbc hl,de
+	ld de,(RV_RTICKS)
+	add hl,de
+	ld (RV_RTICKS),hl
+	ret
 
 ; take the IRQ if one is pending and I is clear
 irq_check:

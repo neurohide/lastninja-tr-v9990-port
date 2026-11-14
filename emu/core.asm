@@ -4699,7 +4699,7 @@ optab_lo:
 	db emu_bad & 255
 	db emu_bad & 255
 	db h_81 & 255
-	db emu_bad & 255
+	db h_dissolve & 255
 	db emu_bad & 255
 	db h_84 & 255
 	db h_85 & 255
@@ -4956,7 +4956,7 @@ optab_hi:
 	db emu_bad / 256
 	db emu_bad / 256
 	db h_81 / 256
-	db emu_bad / 256
+	db h_dissolve / 256
 	db emu_bad / 256
 	db h_84 / 256
 	db h_85 / 256

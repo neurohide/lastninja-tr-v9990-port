@@ -216,6 +216,13 @@ rn_sd:
 
 ; draw changed character rows into the clean copy and blit them on screen
 bg_rows:
+	; Sprite-only animation leaves these background rows untouched.  Skip the
+	; page-to-row fold entirely until screen, bitmap, or colour RAM is written.
+	ld a,(RV_VDIRTY)
+	or a
+	ret z
+	xor a
+	ld (RV_VDIRTY),a
 	; fold the page flags into per-row pending flags, then clear the pages
 	xor a
 	ld (rd_row),a
@@ -276,7 +283,11 @@ rd_rowloop:
 	or a
 	jp z,rd_nextrow
 	call row_budget		; time left for another row this frame?
-	ret z
+	jr nz,rd_budget_ok
+	ld a,1			; retain deferred rows for the next render
+	ld (RV_VDIRTY),a
+	ret
+rd_budget_ok:
 	ld a,(rd_row)
 	ld e,a
 	ld d,0
@@ -474,6 +485,8 @@ rb_no:
 	ret
 
 dirty_all:
+	ld a,1
+	ld (RV_VDIRTY),a
 	ld hl,DIRTY
 	ld b,64
 da_loop:
@@ -1141,7 +1154,7 @@ sdc_wide:
 	djnz sdc_wide
 	ret
 
-; ---- C64 joystick port 2 from MSX joystick 1 + cursor keys/space ----------
+; ---- C64 joystick port 2 from MSX joystick 1 + arrows/WASD/space ---------
 ; out: A = C64 $DC00 bits, active low: b0 up b1 down b2 left b3 right b4 fire
 joy_read:
 	if AUTOWALK		; benchmark: hold right from frame AW_START to AUTOWALK-1
@@ -1201,6 +1214,30 @@ jr3:	bit 7,c
 jr4:	bit 0,c
 	jr nz,jr5
 	res 4,b
-jr5:	ld a,b
+jr5:	; MSX row 2: W is bit 1; row 3: A/S/D are bits 0/1/2.
+	; Merge WASD with the arrow keys and joystick as active-low directions.
+	in a,($AA)
+	and $F0
+	or 2
+	out ($AA),a
+	in a,($A9)
+	bit 1,a
+	jr nz,jr6
+	res 0,b			; W = up
+jr6:	 in a,($AA)
+	and $F0
+	or 3
+	out ($AA),a
+	in a,($A9)
+	bit 0,a
+	jr nz,jr7
+	res 2,b			; A = left
+jr7:	bit 1,a
+	jr nz,jr8
+	res 1,b			; S = down
+jr8:	bit 2,a
+	jr nz,jr9
+	res 3,b			; D = right
+jr9:	ld a,b
 	pop bc
 	ret
